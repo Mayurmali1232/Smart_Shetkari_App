@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, RefreshControl, TouchableOpacity, Image } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADIUS, FONTS } from '../constants/theme';
@@ -13,6 +13,7 @@ import DateSelector from '../components/DateSelector';
 import LoadingIndicator from '../components/LoadingIndicator';
 import ErrorMessage from '../components/ErrorMessage';
 import LanguageSelector from '../components/LanguageSelector';
+import BottomNav from '../components/BottomNav';
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -66,22 +67,25 @@ export default function DashboardScreen() {
     setLoading(true);
   };
 
-  const quickActions = [
-    { title: t('dairy.title') || 'Dairy & Livestock', icon: '🐄', route: '/dairy', color: '#059669' },
-    { title: t('dashboard.addWorker'), icon: '👤➕', route: '/employees/add', color: COLORS.primary },
-    { title: t('dashboard.markAttendance'), icon: '📋', route: '/attendance', color: '#0284c7' },
-    { title: t('dashboard.payWages'), icon: '💸', route: '/wages', color: '#16a34a' },
-    { title: t('dashboard.addTractor'), icon: '🚜➕', route: '/tractors/add', color: '#d97706' },
-    { title: t('dashboard.bookTractor'), icon: '📅', route: '/bookings/add', color: '#9333ea' },
-    { title: t('dashboard.addExpense'), icon: '⛽', route: '/expenses', color: '#dc2626' },
-    { title: t('dashboard.viewReports'), icon: '📊', route: '/reports', color: '#475569' }
+  // Main Services Grid (Matching Panel 5 in Poster)
+  const mainServices = [
+    { id: 'employees', title: 'कर्मचारी', sub: 'कामगार व्यवस्थापन', icon: '👥', route: '/employees', color: '#1E88E5', bg: '#E3F2FD' },
+    { id: 'attendance', title: 'हजेरी', sub: 'दैनिक हजेरी नोंद', icon: '📅', route: '/attendance', color: '#2E7D32', bg: '#E8F5E9' },
+    { id: 'dairy', title: 'दुग्धव्यवसाय', sub: 'दूध व पशुपालन', icon: '🐄', route: '/dairy', color: '#00897B', bg: '#E0F2F1' },
+    { id: 'tractors', title: 'ट्रॅक्टर', sub: 'भाडे व कामे', icon: '🚜', route: '/tractors', color: '#EF6C00', bg: '#FFF3E0' },
+    { id: 'expenses', title: 'खर्च', sub: 'खते, बियाणे, इंधन', icon: '👛', route: '/expenses', color: '#D81B60', bg: '#FCE4EC' },
+    { id: 'bookings', title: 'बुकिंग', sub: 'ट्रॅक्टर बुकिंग', icon: '📝', route: '/bookings', color: '#8E24AA', bg: '#F3E5F5' },
+    { id: 'reports', title: 'अहवाल', sub: 'हिशोब व नफा-तोटा', icon: '📊', route: '/reports', color: '#37474F', bg: '#ECEFF1' }
   ];
+
+  const farmerName = user?.fullName || 'शेतकरी मित्र!';
+  const farmerDistrict = user?.district || user?.village || 'पुणे जिल्हा';
 
   return (
     <SafeAreaView style={styles.container}>
       <AppHeader
-        title={t('common.appName')}
-        subtitle={user ? `🌾 ${user.fullName} (${user.village || 'Farm'})` : undefined}
+        title={t('common.appName') || 'Smart Shetkari'}
+        subtitle={`शेतकऱ्यांचा स्मार्ट साथी`}
         showBack={false}
         unreadCount={unreadCount}
         onLanguagePress={() => setLangModalVisible(true)}
@@ -98,11 +102,59 @@ export default function DashboardScreen() {
           />
         }
       >
+        {/* Farmer Greeting Banner Card (Panel 5 in Poster) */}
+        <View style={styles.greetingCard}>
+          <View style={styles.greetingLeft}>
+            <Text style={styles.greetingSub}>नमस्कार,</Text>
+            <Text style={styles.greetingTitle}>{farmerName}</Text>
+            <Text style={styles.greetingDistrict}>📍 {farmerDistrict}</Text>
+          </View>
+          <View style={styles.farmerAvatarBadge}>
+            <Text style={styles.farmerAvatarEmoji}>👨‍🌾</Text>
+          </View>
+        </View>
+
+        {/* Weather & Agricultural Conditions Card (Panel 5 in Poster) */}
+        <View style={styles.weatherCard}>
+          <View style={styles.weatherLeft}>
+            <Text style={styles.weatherSunIcon}>☀️</Text>
+            <View style={{ marginLeft: SPACING.sm }}>
+              <Text style={styles.weatherTemp}>28°C</Text>
+              <Text style={styles.weatherLabel}>आजचे हवामान • कडक ऊन</Text>
+            </View>
+          </View>
+          <View style={styles.weatherRight}>
+            <Text style={styles.weatherBadgeText}>शेती सल्ला</Text>
+            <Text style={styles.weatherHint}>पाण्याची योग्य पाळी द्या</Text>
+          </View>
+        </View>
+
         {/* Date Selector */}
         <DateSelector
           currentDate={selectedDate}
           onDateChange={handleDateChange}
         />
+
+        {/* Main Services (मुख्य सुविधा - 2/3 column grid matching Panel 5) */}
+        <View style={styles.servicesHeaderRow}>
+          <Text style={styles.sectionHeader}>मुख्य सुविधा / Services</Text>
+        </View>
+        <View style={styles.servicesGrid}>
+          {mainServices.map((service) => (
+            <TouchableOpacity
+              key={service.id}
+              style={styles.serviceCard}
+              onPress={() => router.push(service.route)}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.serviceIconBox, { backgroundColor: service.bg }]}>
+                <Text style={styles.serviceIcon}>{service.icon}</Text>
+              </View>
+              <Text style={styles.serviceTitle}>{service.title}</Text>
+              <Text style={styles.serviceSub} numberOfLines={1}>{service.sub}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
         {error ? <ErrorMessage message={error} onRetry={() => fetchDashboardData(selectedDate)} /> : null}
 
@@ -110,11 +162,11 @@ export default function DashboardScreen() {
           <LoadingIndicator message={t('common.loading')} />
         ) : stats ? (
           <>
-            {/* Today's Overview Section */}
-            <Text style={styles.sectionHeader}>{t('dashboard.todayOverview')}</Text>
+            {/* Today's Farm Overview Section */}
+            <Text style={styles.sectionHeader}>आजची स्थिती / Today's Overview</Text>
             <View style={styles.grid}>
               <StatCard
-                title={t('dashboard.activeWorkers')}
+                title={t('dashboard.activeWorkers') || 'एकूण कामगार'}
                 value={stats.totalActiveWorkers}
                 icon="👥"
                 color="#0f766e"
@@ -123,7 +175,7 @@ export default function DashboardScreen() {
                 onPress={() => router.push('/employees')}
               />
               <StatCard
-                title={t('dashboard.presentToday')}
+                title={t('dashboard.presentToday') || 'उपस्थित'}
                 value={stats.workersPresentToday}
                 icon="✅"
                 color={COLORS.secondary}
@@ -132,7 +184,7 @@ export default function DashboardScreen() {
                 onPress={() => router.push('/attendance')}
               />
               <StatCard
-                title={t('dashboard.absentToday')}
+                title={t('dashboard.absentToday') || 'अनुपस्थित'}
                 value={stats.workersAbsentToday}
                 icon="❌"
                 color={COLORS.danger}
@@ -141,7 +193,7 @@ export default function DashboardScreen() {
                 onPress={() => router.push('/attendance')}
               />
               <StatCard
-                title={t('dashboard.todayWages')}
+                title={t('dashboard.todayWages') || 'आजची मजुरी'}
                 value={stats.todayWageAmount}
                 icon="💵"
                 color="#2563eb"
@@ -152,11 +204,11 @@ export default function DashboardScreen() {
               />
             </View>
 
-            {/* Tractors & Financial Balance Overview */}
-            <Text style={styles.sectionHeader}>Tractor & Financial Overview</Text>
+            {/* Tractors & Financial Balance */}
+            <Text style={styles.sectionHeader}>ट्रॅक्टर व आर्थिक स्थिती / Financial</Text>
             <View style={styles.grid}>
               <StatCard
-                title={t('dashboard.tractorsCount')}
+                title={t('dashboard.tractorsCount') || 'एकूण ट्रॅक्टर्स'}
                 value={stats.totalTractors}
                 icon="🚜"
                 color="#ea580c"
@@ -165,7 +217,7 @@ export default function DashboardScreen() {
                 onPress={() => router.push('/tractors')}
               />
               <StatCard
-                title={t('dashboard.todayBookings')}
+                title={t('dashboard.todayBookings') || 'आजची कामे'}
                 value={stats.todayTractorBookings}
                 icon="📅"
                 color="#7c3aed"
@@ -174,7 +226,7 @@ export default function DashboardScreen() {
                 onPress={() => router.push('/bookings')}
               />
               <StatCard
-                title={t('dashboard.monthlyIncome')}
+                title={t('dashboard.monthlyIncome') || 'चालू महिना जमा'}
                 value={stats.monthlyIncome}
                 icon="📈"
                 color="#16a34a"
@@ -184,7 +236,7 @@ export default function DashboardScreen() {
                 onPress={() => router.push('/expenses')}
               />
               <StatCard
-                title={t('dashboard.monthlyExpenses')}
+                title={t('dashboard.monthlyExpenses') || 'चालू महिना खर्च'}
                 value={stats.monthlyExpenses}
                 icon="📉"
                 color="#dc2626"
@@ -193,72 +245,13 @@ export default function DashboardScreen() {
                 style={styles.halfCard}
                 onPress={() => router.push('/expenses')}
               />
-              <StatCard
-                title={t('dashboard.outstandingWages')}
-                value={stats.outstandingWorkerWages}
-                icon="⚠️"
-                color="#b45309"
-                bgColor="#fef3c7"
-                isCurrency
-                style={styles.halfCard}
-                onPress={() => router.push('/wages')}
-              />
-              <StatCard
-                title={t('dashboard.outstandingReceivables')}
-                value={stats.outstandingCustomerPayments}
-                icon="⏳"
-                color="#0369a1"
-                bgColor="#e0f2fe"
-                isCurrency
-                style={styles.halfCard}
-                onPress={() => router.push('/bookings')}
-              />
-            </View>
-
-            {/* Dairy & Livestock Module Banner */}
-            <TouchableOpacity
-              style={styles.dairyBannerCard}
-              onPress={() => router.push('/dairy')}
-              activeOpacity={0.85}
-            >
-              <View style={styles.dairyBannerLeft}>
-                <View style={styles.dairyBannerIconContainer}>
-                  <Text style={styles.dairyBannerIcon}>🐄</Text>
-                </View>
-                <View style={styles.dairyBannerTexts}>
-                  <Text style={styles.dairyBannerTitle}>{t('dairy.title') || 'Dairy & Livestock Management'}</Text>
-                  <Text style={styles.dairyBannerSubtitle}>
-                    {t('dairy.subtitle') || 'Manage animals, milk sales & dairy profit'}
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.dairyBannerBadge}>
-                <Text style={styles.dairyBannerBadgeText}>Open ➔</Text>
-              </View>
-            </TouchableOpacity>
-
-            {/* Quick Actions */}
-            <Text style={styles.sectionHeader}>{t('dashboard.quickActions')}</Text>
-            <View style={styles.actionsGrid}>
-              {quickActions.map((action, idx) => (
-                <TouchableOpacity
-                  key={idx}
-                  style={styles.actionPill}
-                  onPress={() => router.push(action.route)}
-                  activeOpacity={0.7}
-                >
-                  <View style={[styles.actionIconBox, { backgroundColor: action.color }]}>
-                    <Text style={styles.actionIcon}>{action.icon}</Text>
-                  </View>
-                  <Text style={styles.actionTitle} numberOfLines={2}>
-                    {action.title}
-                  </Text>
-                </TouchableOpacity>
-              ))}
             </View>
           </>
         ) : null}
       </ScrollView>
+
+      {/* Bottom Unified Navigation Bar */}
+      <BottomNav active="home" />
 
       <LanguageSelector
         visible={langModalVisible}
@@ -275,14 +268,153 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: SPACING.md,
-    paddingBottom: SPACING.xxl
+    paddingBottom: SPACING.lg
   },
-  sectionHeader: {
-    fontSize: FONTS.large,
+  greetingCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: COLORS.surface,
+    padding: SPACING.md,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: '#C8E6C9',
+    marginBottom: SPACING.sm,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2
+  },
+  greetingLeft: {
+    flex: 1
+  },
+  greetingSub: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    fontWeight: '600'
+  },
+  greetingTitle: {
+    fontSize: 18,
     fontWeight: '800',
     color: COLORS.primaryDark,
-    marginTop: SPACING.lg,
-    marginBottom: SPACING.sm
+    marginTop: 2
+  },
+  greetingDistrict: {
+    fontSize: 12,
+    color: COLORS.primary,
+    fontWeight: '700',
+    marginTop: 2
+  },
+  farmerAvatarBadge: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: COLORS.primaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: COLORS.primary
+  },
+  farmerAvatarEmoji: {
+    fontSize: 30
+  },
+  weatherCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#FFFDE7',
+    borderWidth: 1,
+    borderColor: '#FFF59D',
+    borderRadius: RADIUS.md,
+    padding: SPACING.sm + 4,
+    marginBottom: SPACING.md
+  },
+  weatherLeft: {
+    flexDirection: 'row',
+    alignItems: 'center'
+  },
+  weatherSunIcon: {
+    fontSize: 32
+  },
+  weatherTemp: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#F57F17'
+  },
+  weatherLabel: {
+    fontSize: 11,
+    color: '#795548',
+    fontWeight: '600'
+  },
+  weatherRight: {
+    alignItems: 'flex-end'
+  },
+  weatherBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#E65100',
+    backgroundColor: '#FFE082',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: RADIUS.full
+  },
+  weatherHint: {
+    fontSize: 10,
+    color: '#8D6E63',
+    marginTop: 2
+  },
+  servicesHeaderRow: {
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.xs
+  },
+  sectionHeader: {
+    fontSize: FONTS.medium + 1,
+    fontWeight: '800',
+    color: COLORS.primaryDark,
+    marginTop: SPACING.md,
+    marginBottom: SPACING.xs + 2
+  },
+  servicesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
+    justifyContent: 'space-between'
+  },
+  serviceCard: {
+    width: '48%',
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
+    alignItems: 'flex-start'
+  },
+  serviceIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: RADIUS.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.xs + 2
+  },
+  serviceIcon: {
+    fontSize: 22
+  },
+  serviceTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: COLORS.primaryDark
+  },
+  serviceSub: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    marginTop: 2
   },
   grid: {
     flexDirection: 'row',
@@ -293,103 +425,5 @@ const styles = StyleSheet.create({
   halfCard: {
     width: '48%',
     marginBottom: SPACING.xs
-  },
-  actionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SPACING.sm,
-    justifyContent: 'space-between',
-    marginTop: SPACING.xs
-  },
-  actionPill: {
-    width: '31%',
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.md,
-    padding: SPACING.sm,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    minHeight: 90,
-    justifyContent: 'center',
-    elevation: 1,
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2
-  },
-  actionIconBox: {
-    width: 38,
-    height: 38,
-    borderRadius: RADIUS.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: SPACING.xs
-  },
-  actionIcon: {
-    fontSize: 18
-  },
-  actionTitle: {
-    fontSize: FONTS.small,
-    fontWeight: '700',
-    color: COLORS.textPrimary,
-    textAlign: 'center'
-  },
-  dairyBannerCard: {
-    marginTop: SPACING.md,
-    backgroundColor: '#ecfdf5',
-    borderRadius: RADIUS.lg,
-    padding: SPACING.md,
-    borderWidth: 1.5,
-    borderColor: '#a7f3d0',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    shadowColor: '#059669',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2
-  },
-  dairyBannerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    marginRight: SPACING.sm
-  },
-  dairyBannerIconContainer: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: '#10b981',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: SPACING.sm
-  },
-  dairyBannerIcon: {
-    fontSize: 24
-  },
-  dairyBannerTexts: {
-    flex: 1
-  },
-  dairyBannerTitle: {
-    fontSize: FONTS.medium,
-    fontWeight: '800',
-    color: '#065f46'
-  },
-  dairyBannerSubtitle: {
-    fontSize: FONTS.small,
-    color: '#047857',
-    marginTop: 2
-  },
-  dairyBannerBadge: {
-    backgroundColor: '#059669',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: RADIUS.full
-  },
-  dairyBannerBadgeText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: 'bold'
   }
 });

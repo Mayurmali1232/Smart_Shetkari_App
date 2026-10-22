@@ -32,17 +32,17 @@ export default function AddEmployeeScreen() {
     setSuccessMessage('');
 
     if (!fullName.trim()) {
-      const msg = 'Please enter the worker full name / कृपया मजुराचे नाव टाका';
+      const msg = 'कृपया कर्मचाऱ्याचे पूर्ण नाव टाका / Please enter the worker full name';
       setError(msg);
-      Alert.alert(t('common.error') || 'Error', msg);
+      Alert.alert(t('common.error') || 'त्रुटी', msg);
       scrollRef.current?.scrollTo({ y: 0, animated: true });
       return;
     }
     const wageNum = parseFloat(dailyWage);
     if (isNaN(wageNum) || wageNum <= 0) {
-      const msg = 'Please enter a valid daily wage rate greater than 0 / रोजंदारी योग्य टाका';
+      const msg = 'कृपया योग्य दैनिक मजुरी दर टाका / Please enter a valid daily wage rate';
       setError(msg);
-      Alert.alert(t('common.error') || 'Error', msg);
+      Alert.alert(t('common.error') || 'त्रुटी', msg);
       scrollRef.current?.scrollTo({ y: 0, animated: true });
       return;
     }
@@ -60,13 +60,13 @@ export default function AddEmployeeScreen() {
       });
 
       if (res.success) {
-        setSuccessMessage(`Worker "${fullName.trim()}" added successfully!`);
+        setSuccessMessage(`कर्मचारी "${fullName.trim()}" यशस्वीरीत्या जोडला गेला!`);
         Alert.alert(
-          t('common.success') || 'Success',
-          `Worker "${fullName.trim()}" added successfully!\nमजूर यशस्वीरित्या जोडला गेला!`,
+          t('common.success') || 'यशस्वी',
+          `कर्मचारी "${fullName.trim()}" यशस्वीरित्या जोडला गेला!\nWorker added successfully!`,
           [
             {
-              text: 'OK',
+              text: 'ठीक आहे',
               onPress: () => {
                 if (router.canGoBack()) {
                   router.back();
@@ -78,15 +78,15 @@ export default function AddEmployeeScreen() {
           ]
         );
       } else {
-        const errorMsg = res.message || 'Failed to add worker';
+        const errorMsg = res.message || 'कर्मचारी जोडताना त्रुटी आली';
         setError(errorMsg);
-        Alert.alert(t('common.error') || 'Error', errorMsg);
+        Alert.alert(t('common.error') || 'त्रुटी', errorMsg);
         scrollRef.current?.scrollTo({ y: 0, animated: true });
       }
     } catch (e) {
-      const errorMsg = e.message || 'Failed to add worker';
+      const errorMsg = e.message || 'कर्मचारी जोडताना त्रुटी आली';
       setError(errorMsg);
-      Alert.alert(t('common.error') || 'Error', errorMsg);
+      Alert.alert(t('common.error') || 'त्रुटी', errorMsg);
       scrollRef.current?.scrollTo({ y: 0, animated: true });
     } finally {
       setLoading(false);
@@ -95,7 +95,13 @@ export default function AddEmployeeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <AppHeader title={t('employees.addNew')} showBack fallbackRoute="/employees" showLanguage={false} />
+      <AppHeader
+        title="कर्मचारी जोडा"
+        subtitle="नवीन शेतमजूर माहिती नोंदवा"
+        showBack
+        fallbackRoute="/employees"
+        showLanguage={false}
+      />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -113,21 +119,23 @@ export default function AddEmployeeScreen() {
           {/* Wage Integrity Banner */}
           <View style={styles.infoBox}>
             <Text style={styles.infoIcon}>💡</Text>
-            <Text style={styles.infoText}>{t('employees.wageIntegrityNote')}</Text>
+            <Text style={styles.infoText}>
+              कर्मचारी जोडल्यानंतर हजेरी पटावर लगेच नाव दिसेल आणि दैनिक मजुरी आपोआप हिशोबात जोडली जाईल.
+            </Text>
           </View>
 
           <View style={styles.form}>
             <AppInput
-              label={t('employees.workerName')}
-              placeholder="e.g. Tukaram Jadhav"
+              label="कर्मचाऱ्याचे पूर्ण नाव *"
+              placeholder="उदा. रामदास पाटील"
               value={fullName}
               onChangeText={setFullName}
               leftIcon={<Text style={styles.inputEmoji}>👤</Text>}
             />
 
             <AppInput
-              label={t('employees.contactNumber')}
-              placeholder="10-digit mobile number"
+              label="संपर्क क्रमांक (मोबाईल)"
+              placeholder="10 अंकी मोबाईल नंबर"
               value={mobileNumber}
               onChangeText={setMobileNumber}
               keyboardType="phone-pad"
@@ -135,16 +143,16 @@ export default function AddEmployeeScreen() {
             />
 
             <AppInput
-              label={t('employees.address')}
-              placeholder="e.g. Koregaon, Baramati"
+              label="पत्ता / गाव"
+              placeholder="उदा. वडगाव, ता. बारामती"
               value={villageAddress}
               onChangeText={setVillageAddress}
               leftIcon={<Text style={styles.inputEmoji}>📍</Text>}
             />
 
             <AppInput
-              label={t('employees.dailyWage')}
-              placeholder="e.g. 500"
+              label="दैनिक मजुरी दर (₹) *"
+              placeholder="उदा. 500"
               value={dailyWage}
               onChangeText={setDailyWage}
               keyboardType="numeric"
@@ -152,23 +160,27 @@ export default function AddEmployeeScreen() {
             />
 
             {/* Wage Type Selector */}
-            <Text style={styles.fieldLabel}>{t('employees.wageType')}</Text>
+            <Text style={styles.fieldLabel}>मजुरीचा प्रकार (Wage Type)</Text>
             <View style={styles.segmentedRow}>
-              {['DAILY', 'MONTHLY', 'PIECE_RATE'].map((type) => (
+              {[
+                { id: 'DAILY', label: 'दैनिक (Daily)' },
+                { id: 'MONTHLY', label: 'मासिक (Monthly)' },
+                { id: 'PIECE_RATE', label: 'काम आधारित' }
+              ].map((item) => (
                 <TouchableOpacity
-                  key={type}
-                  style={[styles.segmentBtn, wageType === type && styles.segmentBtnActive]}
-                  onPress={() => setWageType(type)}
+                  key={item.id}
+                  style={[styles.segmentBtn, wageType === item.id && styles.segmentBtnActive]}
+                  onPress={() => setWageType(item.id)}
                 >
-                  <Text style={[styles.segmentText, wageType === type && styles.segmentTextActive]}>
-                    {type}
+                  <Text style={[styles.segmentText, wageType === item.id && styles.segmentTextActive]}>
+                    {item.label}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
 
             <AppInput
-              label={t('employees.joiningDate')}
+              label="रुजू झाल्याची तारीख"
               value={joiningDate}
               onChangeText={setJoiningDate}
               placeholder="YYYY-MM-DD"
@@ -176,8 +188,8 @@ export default function AddEmployeeScreen() {
             />
 
             <AppInput
-              label={t('common.notes')}
-              placeholder="e.g. Specializes in sugarcane harvesting"
+              label="विशेष काम / टीप (Notes)"
+              placeholder="उदा. ऊस तोडणी किंवा फवारणी तज्ज्ञ"
               value={notes}
               onChangeText={setNotes}
               multiline
@@ -185,7 +197,7 @@ export default function AddEmployeeScreen() {
             />
 
             <AppButton
-              title={loading ? 'Saving Worker...' : (t('common.save') || 'Save')}
+              title={loading ? 'जतन होत आहे...' : 'जतन करा'}
               onPress={handleSave}
               loading={loading}
               disabled={loading}
@@ -208,7 +220,7 @@ const styles = StyleSheet.create({
     paddingBottom: SPACING.xxl
   },
   successBox: {
-    backgroundColor: '#dcfce7',
+    backgroundColor: COLORS.lightGreen,
     borderWidth: 1,
     borderColor: '#4ade80',
     borderRadius: RADIUS.md,
@@ -223,15 +235,15 @@ const styles = StyleSheet.create({
   },
   successText: {
     fontSize: FONTS.small,
-    color: '#15803d',
+    color: COLORS.primaryGreen,
     lineHeight: 18,
     flex: 1,
     fontWeight: '700'
   },
   infoBox: {
-    backgroundColor: COLORS.primaryLight,
+    backgroundColor: COLORS.lightGreen,
     borderWidth: 1,
-    borderColor: '#86efac',
+    borderColor: '#A5D6A7',
     borderRadius: RADIUS.md,
     padding: SPACING.md,
     flexDirection: 'row',
@@ -244,7 +256,7 @@ const styles = StyleSheet.create({
   },
   infoText: {
     fontSize: FONTS.small,
-    color: COLORS.primaryDark,
+    color: COLORS.darkText,
     lineHeight: 18,
     flex: 1,
     fontWeight: '500'
@@ -254,48 +266,52 @@ const styles = StyleSheet.create({
     padding: SPACING.md,
     borderRadius: RADIUS.lg,
     borderWidth: 1,
-    borderColor: COLORS.border
+    borderColor: '#E8F0E9',
+    elevation: 2,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4
   },
   inputEmoji: {
     fontSize: 16
   },
   fieldLabel: {
-    fontSize: FONTS.regular,
-    fontWeight: '600',
-    color: COLORS.textPrimary,
+    fontSize: FONTS.small,
+    fontWeight: '700',
+    color: COLORS.darkText,
     marginBottom: SPACING.xs
   },
   segmentedRow: {
     flexDirection: 'row',
-    backgroundColor: '#f1f5f9',
-    borderRadius: RADIUS.md,
-    padding: 3,
+    gap: SPACING.xs,
     marginBottom: SPACING.md
   },
   segmentBtn: {
     flex: 1,
-    paddingVertical: SPACING.sm,
+    paddingVertical: 10,
+    borderRadius: RADIUS.md,
+    backgroundColor: '#F1F5F9',
     alignItems: 'center',
-    borderRadius: RADIUS.sm
+    borderWidth: 1,
+    borderColor: COLORS.border
   },
   segmentBtnActive: {
-    backgroundColor: COLORS.surface,
-    elevation: 2,
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2
+    backgroundColor: COLORS.lightGreen,
+    borderColor: COLORS.primaryGreen
   },
   segmentText: {
-    fontSize: FONTS.small,
-    fontWeight: '600',
-    color: COLORS.textSecondary
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    fontWeight: '600'
   },
   segmentTextActive: {
-    color: COLORS.primary,
-    fontWeight: '700'
+    color: COLORS.darkText,
+    fontWeight: '800'
   },
   submitBtn: {
-    marginTop: SPACING.md
+    marginTop: SPACING.md,
+    backgroundColor: COLORS.primaryGreen,
+    borderRadius: RADIUS.md
   }
 });

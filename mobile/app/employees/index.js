@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, TextInput } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADIUS, FONTS } from '../../constants/theme';
 import { employeeService } from '../../services/employeeService';
 import { useTranslation } from 'react-i18next';
 import AppHeader from '../../components/AppHeader';
-import AppInput from '../../components/AppInput';
 import AppButton from '../../components/AppButton';
 import LoadingIndicator from '../../components/LoadingIndicator';
 import ErrorMessage from '../../components/ErrorMessage';
 import EmptyState from '../../components/EmptyState';
+import BottomNav from '../../components/BottomNav';
 
 export default function EmployeeListScreen() {
   const router = useRouter();
@@ -60,18 +60,28 @@ export default function EmployeeListScreen() {
       >
         <View style={styles.cardHeader}>
           <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{item.fullName.charAt(0)}</Text>
+            <Text style={styles.avatarText}>{item.fullName ? item.fullName.charAt(0) : '👤'}</Text>
           </View>
           <View style={styles.nameContainer}>
-            <Text style={styles.workerName}>{item.fullName}</Text>
-            <Text style={styles.workerVillage}>
-              📍 {item.villageAddress || 'Farm Worker'} {item.mobileNumber ? `• 📞 ${item.mobileNumber}` : ''}
-            </Text>
+            <View style={styles.titleRow}>
+              <Text style={styles.workerName} numberOfLines={1}>{item.fullName}</Text>
+              <View style={[styles.statusBadge, { backgroundColor: isActive ? COLORS.lightGreen : '#f1f5f9' }]}>
+                <Text style={[styles.statusText, { color: isActive ? COLORS.primaryGreen : COLORS.textSecondary }]}>
+                  {isActive ? (t('employees.active') || 'सक्रिय') : (t('employees.inactive') || 'बंद')}
+                </Text>
+              </View>
+            </View>
+            <View style={styles.metaRow}>
+              <View style={styles.roleTag}>
+                <Text style={styles.roleTagText}>{item.designation || 'शेती कामगार'}</Text>
+              </View>
+              {item.mobileNumber ? (
+                <Text style={styles.workerPhone}>📞 {item.mobileNumber}</Text>
+              ) : null}
+            </View>
           </View>
-          <View style={[styles.statusBadge, { backgroundColor: isActive ? COLORS.primaryLight : '#f1f5f9' }]}>
-            <Text style={[styles.statusText, { color: isActive ? COLORS.primaryDark : COLORS.textSecondary }]}>
-              {isActive ? t('employees.active') : t('employees.inactive')}
-            </Text>
+          <View style={styles.chevron}>
+            <Text style={styles.chevronText}>›</Text>
           </View>
         </View>
 
@@ -79,16 +89,16 @@ export default function EmployeeListScreen() {
 
         <View style={styles.statsRow}>
           <View style={styles.statCol}>
-            <Text style={styles.statLabel}>{t('employees.dailyWage')}</Text>
-            <Text style={styles.statVal}>₹{item.dailyWage}</Text>
+            <Text style={styles.statLabel}>{t('employees.dailyWage') || 'दैनिक मजुरी'}</Text>
+            <Text style={styles.statVal}>₹{item.dailyWage || 0}</Text>
           </View>
           <View style={styles.statCol}>
-            <Text style={styles.statLabel}>{t('employees.daysWorked')}</Text>
-            <Text style={styles.statVal}>{item.totalDaysWorked || 0} days</Text>
+            <Text style={styles.statLabel}>{t('employees.daysWorked') || 'एकूण दिवस'}</Text>
+            <Text style={styles.statVal}>{item.totalDaysWorked || 0} दिवस</Text>
           </View>
           <View style={styles.statCol}>
-            <Text style={styles.statLabel}>{t('employees.balanceDue')}</Text>
-            <Text style={[styles.statVal, { color: (item.outstandingBalance > 0) ? COLORS.accent : COLORS.primary }]}>
+            <Text style={styles.statLabel}>{t('employees.balanceDue') || 'बाकी रक्कम'}</Text>
+            <Text style={[styles.statVal, { color: (item.outstandingBalance > 0) ? COLORS.accent : COLORS.primaryGreen }]}>
               ₹{item.outstandingBalance || 0}
             </Text>
           </View>
@@ -99,24 +109,44 @@ export default function EmployeeListScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <AppHeader title={t('employees.title')} showBack />
+      <AppHeader title={t('employees.title') || 'कर्मचारी व्यवस्थापन'} showBack fallbackRoute="/dashboard" />
 
+      {/* Top Search & Add Row matching Panel 6 */}
       <View style={styles.topBar}>
-        <AppInput
-          placeholder={t('common.search')}
-          value={search}
-          onChangeText={setSearch}
-          leftIcon={<Text style={{ fontSize: 16 }}>🔍</Text>}
-          containerStyle={styles.searchContainer}
-        />
+        <View style={styles.searchRow}>
+          <View style={styles.searchBox}>
+            <Text style={styles.searchIcon}>🔍</Text>
+            <TextInput
+              style={styles.searchInput}
+              placeholder="कर्मचारी शोधा..."
+              placeholderTextColor={COLORS.textSecondary}
+              value={search}
+              onChangeText={setSearch}
+            />
+            {search.length > 0 && (
+              <TouchableOpacity onPress={() => setSearch('')}>
+                <Text style={styles.clearIcon}>✕</Text>
+              </TouchableOpacity>
+            )}
+          </View>
 
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={() => router.push('/employees/add')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.addButtonText}>+ नवीन</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Filter Pills */}
         <View style={styles.filterRow}>
           <TouchableOpacity
             style={[styles.filterPill, statusFilter === '' && styles.filterPillActive]}
             onPress={() => setStatusFilter('')}
           >
             <Text style={[styles.filterText, statusFilter === '' && styles.filterTextActive]}>
-              {t('common.all')}
+              {t('common.all') || 'सर्व'} ({employees.length})
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -124,7 +154,7 @@ export default function EmployeeListScreen() {
             onPress={() => setStatusFilter('ACTIVE')}
           >
             <Text style={[styles.filterText, statusFilter === 'ACTIVE' && styles.filterTextActive]}>
-              {t('employees.active')}
+              {t('employees.active') || 'सक्रिय'}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -132,7 +162,7 @@ export default function EmployeeListScreen() {
             onPress={() => setStatusFilter('INACTIVE')}
           >
             <Text style={[styles.filterText, statusFilter === 'INACTIVE' && styles.filterTextActive]}>
-              {t('employees.inactive')}
+              {t('employees.inactive') || 'बंद'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -141,33 +171,27 @@ export default function EmployeeListScreen() {
       {error ? <ErrorMessage message={error} onRetry={fetchEmployees} /> : null}
 
       {loading && !refreshing ? (
-        <LoadingIndicator message={t('common.loading')} />
+        <LoadingIndicator message={t('common.loading') || 'लोड होत आहे...'} />
       ) : (
         <FlatList
           data={employees}
           keyExtractor={(item) => item.id.toString()}
           renderItem={renderWorkerCard}
           contentContainerStyle={styles.listContent}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.primary]} />}
+          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.primaryGreen]} />}
           ListEmptyComponent={
             <EmptyState
-              title={t('employees.title')}
-              message={t('common.noData')}
-              actionTitle={t('employees.addNew')}
+              title={t('employees.title') || 'कर्मचारी सापडले नाहीत'}
+              message={search ? 'कोणताही कर्मचारी जुळला नाही.' : 'सध्या कोणतेही कर्मचारी नोंदवलेले नाहीत.'}
+              actionTitle="+ नवीन कर्मचारी जोडा"
               onAction={() => router.push('/employees/add')}
             />
           }
         />
       )}
 
-      {/* Floating Add Worker Button */}
-      <View style={styles.floatingContainer}>
-        <AppButton
-          title={`+ ${t('employees.addNew')}`}
-          onPress={() => router.push('/employees/add')}
-          style={styles.floatingBtn}
-        />
-      </View>
+      {/* Bottom Navigation */}
+      <BottomNav active="records" />
     </SafeAreaView>
   );
 }
@@ -180,29 +204,77 @@ const styles = StyleSheet.create({
   topBar: {
     paddingHorizontal: SPACING.md,
     paddingTop: SPACING.sm,
+    paddingBottom: SPACING.xs,
     backgroundColor: COLORS.surface,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border
   },
-  searchContainer: {
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
     marginBottom: SPACING.xs
+  },
+  searchBox: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F1F8F2',
+    borderWidth: 1,
+    borderColor: '#C8E6C9',
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.sm,
+    height: 44
+  },
+  searchIcon: {
+    fontSize: 16,
+    marginRight: 6
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: FONTS.medium,
+    color: COLORS.darkText,
+    paddingVertical: 0
+  },
+  clearIcon: {
+    fontSize: 14,
+    color: COLORS.textSecondary,
+    padding: 4
+  },
+  addButton: {
+    backgroundColor: COLORS.primaryGreen,
+    paddingHorizontal: SPACING.md,
+    height: 44,
+    borderRadius: RADIUS.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: COLORS.primaryGreen,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 2
+  },
+  addButtonText: {
+    color: '#ffffff',
+    fontSize: FONTS.medium,
+    fontWeight: '700'
   },
   filterRow: {
     flexDirection: 'row',
-    gap: SPACING.sm,
-    paddingBottom: SPACING.sm
+    gap: SPACING.xs,
+    paddingVertical: SPACING.xs
   },
   filterPill: {
     paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.xs + 2,
+    paddingVertical: 6,
     borderRadius: RADIUS.full,
     backgroundColor: '#f1f5f9',
     borderWidth: 1,
     borderColor: COLORS.border
   },
   filterPillActive: {
-    backgroundColor: COLORS.primaryLight,
-    borderColor: COLORS.primary
+    backgroundColor: COLORS.lightGreen,
+    borderColor: COLORS.primaryGreen
   },
   filterText: {
     fontSize: FONTS.small,
@@ -210,71 +282,111 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary
   },
   filterTextActive: {
-    color: COLORS.primaryDark,
+    color: COLORS.darkText,
     fontWeight: '700'
   },
   listContent: {
     padding: SPACING.md,
-    paddingBottom: 100
+    paddingBottom: SPACING.xl
   },
   card: {
     backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.md,
+    borderRadius: RADIUS.lg,
     padding: SPACING.md,
     marginBottom: SPACING.sm,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: '#E8F0E9',
     elevation: 2,
     shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 3
+    shadowRadius: 4
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center'
   },
   avatar: {
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     borderRadius: RADIUS.full,
-    backgroundColor: COLORS.primaryLight,
+    backgroundColor: COLORS.lightGreen,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: SPACING.md,
-    borderWidth: 1,
-    borderColor: '#86efac'
+    borderWidth: 2,
+    borderColor: '#A5D6A7'
   },
   avatarText: {
     fontSize: FONTS.title,
     fontWeight: '800',
-    color: COLORS.primaryDark
+    color: COLORS.primaryGreen
   },
   nameContainer: {
     flex: 1
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 6
+  },
   workerName: {
     fontSize: FONTS.large,
     fontWeight: '700',
-    color: COLORS.textPrimary
+    color: COLORS.darkText,
+    flex: 1
   },
-  workerVillage: {
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.xs,
+    marginTop: 4
+  },
+  roleTag: {
+    backgroundColor: '#F1F8F5',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: RADIUS.sm,
+    borderWidth: 1,
+    borderColor: '#D0E5D5'
+  },
+  roleTagText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: COLORS.primaryGreen
+  },
+  workerPhone: {
     fontSize: FONTS.small,
-    color: COLORS.textSecondary,
-    marginTop: 2
+    color: COLORS.textSecondary
   },
   statusBadge: {
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: SPACING.xs,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: RADIUS.full
   },
   statusText: {
-    fontSize: FONTS.small,
+    fontSize: 11,
     fontWeight: '700'
+  },
+  chevron: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#F1F8F5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: SPACING.xs
+  },
+  chevronText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: COLORS.primaryGreen,
+    marginTop: -2
   },
   cardDivider: {
     height: 1,
-    backgroundColor: COLORS.borderLight,
+    backgroundColor: '#F0F4F1',
     marginVertical: SPACING.sm
   },
   statsRow: {
@@ -282,31 +394,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between'
   },
   statCol: {
-    alignItems: 'center'
+    alignItems: 'center',
+    flex: 1
   },
   statLabel: {
     fontSize: 11,
     color: COLORS.textSecondary,
     fontWeight: '600',
-    textTransform: 'uppercase'
+    marginBottom: 2
   },
   statVal: {
     fontSize: FONTS.medium,
     fontWeight: '800',
-    color: COLORS.textPrimary,
-    marginTop: 2
-  },
-  floatingContainer: {
-    position: 'absolute',
-    bottom: SPACING.lg,
-    left: SPACING.lg,
-    right: SPACING.lg
-  },
-  floatingBtn: {
-    elevation: 6,
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6
+    color: COLORS.darkText
   }
 });

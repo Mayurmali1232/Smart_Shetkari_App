@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, RefreshControl } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,6 +12,7 @@ import DateSelector from '../../components/DateSelector';
 import LoadingIndicator from '../../components/LoadingIndicator';
 import ErrorMessage from '../../components/ErrorMessage';
 import EmptyState from '../../components/EmptyState';
+import BottomNav from '../../components/BottomNav';
 
 export default function AttendanceScreen() {
   const router = useRouter();
@@ -19,7 +20,7 @@ export default function AttendanceScreen() {
 
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [employees, setEmployees] = useState([]);
-  const [attendanceMap, setAttendanceMap] = useState({}); // empId -> { status: 'PRESENT'|'ABSENT'|'HALF_DAY'|'LEAVE', dailyWageRate, notes }
+  const [attendanceMap, setAttendanceMap] = useState({});
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -40,7 +41,6 @@ export default function AttendanceScreen() {
       setEmployees(activeEmps);
       setSummary(sumRes.data || null);
 
-      // Build map from existing records
       const existingRecords = attRes.data || [];
       const map = {};
 
@@ -53,7 +53,6 @@ export default function AttendanceScreen() {
             notes: found.notes || ''
           };
         } else {
-          // Default to PRESENT for easy marking
           map[emp.id] = {
             status: 'PRESENT',
             dailyWageRate: emp.dailyWage,
@@ -99,143 +98,124 @@ export default function AttendanceScreen() {
 
   const markAllStatus = (status) => {
     setAttendanceMap((prev) => {
-      const updated = { ...prev };
-      employees.forEach((emp) => {
-        if (updated[emp.id]) {
-          updated[emp.id] = { ...updated[emp.id], status };
-        }
+      const next = { ...prev };
+      Object.keys(next).forEach((id) => {
+        next[id] = { ...next[id], status };
       });
-      return updated;
+      return next;
     });
   };
 
-  const handleSaveAll = async () => {
+  const handleSaveAttendance = async () => {
     setSaving(true);
-    setError('');
     try {
-      const records = employees.map((emp) => {
-        const entry = attendanceMap[emp.id] || { status: 'PRESENT', dailyWageRate: emp.dailyWage };
-        return {
-          employeeId: emp.id,
-          status: entry.status,
-          dailyWageRate: entry.dailyWageRate || emp.dailyWage,
-          notes: entry.notes || undefined
-        };
-      });
+      const records = Object.keys(attendanceMap).map((empId) => ({
+        employeeId: parseInt(empId, 10),
+        status: attendanceMap[empId].status,
+        dailyWageRate: attendanceMap[empId].dailyWageRate,
+        notes: attendanceMap[empId].notes
+      }));
 
-      const res = await attendanceService.recordBulk({
-        workDate: selectedDate,
+      const res = await attendanceService.saveBulk({
+        date: selectedDate,
         records
       });
 
       if (res.success) {
-        Alert.alert(t('common.success'), 'Attendance saved successfully for ' + selectedDate);
+        Alert.alert(
+          'यशस्वी! / Saved',
+          'हजेरी यशस्वीरित्या जतन झाली!\nAttendance saved successfully for ' + selectedDate
+        );
         loadData(selectedDate);
+      } else {
+        Alert.alert('Error', res.message || 'Failed to save attendance');
       }
     } catch (e) {
-      setError(e.message || 'Failed to save attendance');
+      Alert.alert('Error', e.message || 'Failed to save attendance');
     } finally {
       setSaving(false);
     }
   };
 
+  // Aggregates
+  const totalEmployees = employees.length;
+  const presentCount = Object.values(attendanceMap).filter((a) => a.status === 'PRESENT' || a.status === 'HALF_DAY').length;
+  const absentCount = Object.values(attendanceMap).filter((a) => a.status === 'ABSENT' || a.status === 'LEAVE').length;
+
   const renderWorkerAttendanceRow = ({ item }) => {
-    const entry = attendanceMap[item.id] || { status: 'PRESENT' };
-    const currentStatus = entry.status;
+    const current = attendanceMap[item.id] || { status: 'PRESENT' };
+    const isPresent = current.status === 'PRESENT' || current.status === 'HALF_DAY';
 
     return (
-      <View style={styles.workerRow}>
+      <View style={styles.workerCard}>
+        <View style={styles.workerAvatar}>
+          <Text style={styles.workerAvatarEmoji}>👨‍🌾</Text>
+        </View>
+
         <View style={styles.workerInfo}>
           <Text style={styles.workerName}>{item.fullName}</Text>
+          <Text style={[styles.workerStatusText, { color: isPresent ? COLORS.primary : COLORS.danger }]}>
+            {isPresent ? '✔ उपस्थित (Present)' : '✖ अनुपस्थित (Absent)'}
+          </Text>
           <Text style={styles.workerSub}>
-            Rate: ₹{item.dailyWage} {item.villageAddress ? `• ${item.villageAddress}` : ''}
+            दर: ₹{item.dailyWage}/दिवस • {item.role || 'शेती कामगार'}
           </Text>
         </View>
 
-        {/* Status Toggle Buttons: P / H / A / L */}
-        <View style={styles.toggleGroup}>
-          <TouchableOpacity
-            style={[styles.toggleBtn, currentStatus === 'PRESENT' && styles.presentActive]}
-            onPress={() => setWorkerStatus(item.id, 'PRESENT')}
-          >
-            <Text style={[styles.toggleText, currentStatus === 'PRESENT' && styles.toggleTextActive]}>
-              P
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.toggleBtn, currentStatus === 'HALF_DAY' && styles.halfDayActive]}
-            onPress={() => setWorkerStatus(item.id, 'HALF_DAY')}
-          >
-            <Text style={[styles.toggleText, currentStatus === 'HALF_DAY' && styles.toggleTextActive]}>
-              ½
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.toggleBtn, currentStatus === 'ABSENT' && styles.absentActive]}
-            onPress={() => setWorkerStatus(item.id, 'ABSENT')}
-          >
-            <Text style={[styles.toggleText, currentStatus === 'ABSENT' && styles.toggleTextActive]}>
-              A
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.toggleBtn, currentStatus === 'LEAVE' && styles.leaveActive]}
-            onPress={() => setWorkerStatus(item.id, 'LEAVE')}
-          >
-            <Text style={[styles.toggleText, currentStatus === 'LEAVE' && styles.toggleTextActive]}>
-              L
-            </Text>
-          </TouchableOpacity>
-        </View>
+        {/* Toggle Button (Matching Panel 7 checkmark/cross) */}
+        <TouchableOpacity
+          style={[styles.statusToggleBtn, isPresent ? styles.btnPresent : styles.btnAbsent]}
+          onPress={() => setWorkerStatus(item.id, isPresent ? 'ABSENT' : 'PRESENT')}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.statusToggleText, { color: isPresent ? '#FFFFFF' : '#FFFFFF' }]}>
+            {isPresent ? '✔' : '✖'}
+          </Text>
+        </TouchableOpacity>
       </View>
     );
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <AppHeader title={t('attendance.title')} showBack showLanguage={false} />
+      <AppHeader
+        title="हजेरी (Attendance)"
+        subtitle="दैनंदिन कामगार हजेरी"
+        showBack
+        fallbackRoute="/dashboard"
+      />
 
-      <View style={styles.topContainer}>
-        <DateSelector
-          currentDate={selectedDate}
-          onDateChange={handleDateChange}
-        />
+      {/* Date Selector */}
+      <DateSelector
+        currentDate={selectedDate}
+        onDateChange={handleDateChange}
+      />
 
-        {/* Daily Summary Card */}
-        {summary && (
-          <View style={styles.summaryCard}>
-            <View style={styles.summaryCol}>
-              <Text style={styles.summaryLabel}>{t('attendance.present')}</Text>
-              <Text style={[styles.summaryVal, { color: COLORS.primary }]}>{summary.presentCount}</Text>
-            </View>
-            <View style={styles.summaryCol}>
-              <Text style={styles.summaryLabel}>{t('attendance.halfDay')}</Text>
-              <Text style={[styles.summaryVal, { color: '#b45309' }]}>{summary.halfDayCount}</Text>
-            </View>
-            <View style={styles.summaryCol}>
-              <Text style={styles.summaryLabel}>{t('attendance.absent')}</Text>
-              <Text style={[styles.summaryVal, { color: COLORS.danger }]}>{summary.absentCount}</Text>
-            </View>
-            <View style={styles.summaryCol}>
-              <Text style={styles.summaryLabel}>{t('attendance.estimatedWages')}</Text>
-              <Text style={[styles.summaryVal, { color: '#2563eb' }]}>₹{summary.estimatedWagesToday || 0}</Text>
-            </View>
-          </View>
-        )}
-
-        {/* Quick Mark All Row */}
-        <View style={styles.markAllRow}>
-          <Text style={styles.markAllLabel}>{t('attendance.markAll')}:</Text>
-          <TouchableOpacity onPress={() => markAllStatus('PRESENT')} style={styles.markAllBtn}>
-            <Text style={styles.markAllBtnText}>✅ All Present</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => markAllStatus('ABSENT')} style={styles.markAllBtn}>
-            <Text style={styles.markAllBtnText}>❌ All Absent</Text>
-          </TouchableOpacity>
+      {/* 3 Summary KPI Cards (Matching Panel 7 in Poster) */}
+      <View style={styles.kpiRow}>
+        <View style={[styles.kpiCard, styles.kpiTotal]}>
+          <Text style={styles.kpiLabel}>एकूण कर्मचारी</Text>
+          <Text style={styles.kpiValue}>{totalEmployees}</Text>
         </View>
+        <View style={[styles.kpiCard, styles.kpiPresent]}>
+          <Text style={styles.kpiLabel}>उपस्थित</Text>
+          <Text style={[styles.kpiValue, { color: COLORS.primary }]}>{presentCount}</Text>
+        </View>
+        <View style={[styles.kpiCard, styles.kpiAbsent]}>
+          <Text style={styles.kpiLabel}>अनुपस्थित</Text>
+          <Text style={[styles.kpiValue, { color: COLORS.danger }]}>{absentCount}</Text>
+        </View>
+      </View>
+
+      {/* Quick Mark All Bar */}
+      <View style={styles.quickBar}>
+        <Text style={styles.quickBarLabel}>सर्व हजेरी:</Text>
+        <TouchableOpacity onPress={() => markAllStatus('PRESENT')} style={styles.quickBtn}>
+          <Text style={styles.quickBtnText}>✔ सर्व उपस्थित</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => markAllStatus('ABSENT')} style={[styles.quickBtn, styles.quickBtnRed]}>
+          <Text style={[styles.quickBtnText, { color: COLORS.danger }]}>✖ सर्व अनुपस्थित</Text>
+        </TouchableOpacity>
       </View>
 
       {error ? <ErrorMessage message={error} onRetry={() => loadData(selectedDate)} /> : null}
@@ -248,29 +228,39 @@ export default function AttendanceScreen() {
           keyExtractor={(item) => item.id.toString()}
           renderItem={renderWorkerAttendanceRow}
           contentContainerStyle={styles.listContent}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.primary]} />}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[COLORS.primary]}
+            />
+          }
           ListEmptyComponent={
             <EmptyState
-              title={t('employees.title')}
-              message="No active farm workers found. Please add workers first."
-              actionTitle={t('employees.addNew')}
+              icon="👥"
+              title="कामगार सापडले नाहीत"
+              message="प्रथम कर्मचारी जोडा जेणेकरून त्यांची रोजची हजेरी नोंदवता येईल."
+              actionTitle="+ नवीन कामगार जोडा"
               onAction={() => router.push('/employees/add')}
             />
           }
         />
       )}
 
-      {/* Floating Save Attendance Button */}
+      {/* Save Button */}
       {employees.length > 0 && (
-        <View style={styles.saveContainer}>
+        <View style={styles.bottomSaveBar}>
           <AppButton
-            title={`💾 ${t('attendance.saveAttendance')}`}
-            onPress={handleSaveAll}
+            title={saving ? 'जतन करत आहे...' : 'जतन करा / Save Attendance'}
+            onPress={handleSaveAttendance}
             loading={saving}
+            disabled={saving}
             style={styles.saveBtn}
           />
         </View>
       )}
+
+      <BottomNav active="records" />
     </SafeAreaView>
   );
 }
@@ -280,143 +270,158 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: COLORS.background
   },
-  topContainer: {
-    paddingHorizontal: SPACING.md,
-    backgroundColor: COLORS.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    paddingBottom: SPACING.sm
-  },
-  summaryCard: {
+  kpiRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    backgroundColor: COLORS.primaryLight,
-    padding: SPACING.sm,
-    borderRadius: RADIUS.md,
-    borderWidth: 1,
-    borderColor: '#86efac',
-    marginBottom: SPACING.xs
-  },
-  summaryCol: {
-    alignItems: 'center'
-  },
-  summaryLabel: {
-    fontSize: 11,
-    color: COLORS.primaryDark,
-    fontWeight: '600'
-  },
-  summaryVal: {
-    fontSize: FONTS.large,
-    fontWeight: '800',
-    marginTop: 2
-  },
-  markAllRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: SPACING.sm,
-    marginTop: SPACING.xs
+    paddingHorizontal: SPACING.md,
+    marginTop: SPACING.xs,
+    marginBottom: SPACING.xs + 2
   },
-  markAllLabel: {
-    fontSize: FONTS.small,
-    fontWeight: '600',
+  kpiCard: {
+    flex: 1,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.md,
+    paddingVertical: SPACING.sm + 2,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: COLORS.border,
+    elevation: 1
+  },
+  kpiTotal: {
+    borderColor: '#C8E6C9',
+    backgroundColor: '#F1F8E9'
+  },
+  kpiPresent: {
+    borderColor: '#A5D6A7',
+    backgroundColor: '#E8F5E9'
+  },
+  kpiAbsent: {
+    borderColor: '#FFCDD2',
+    backgroundColor: '#FFEBEE'
+  },
+  kpiLabel: {
+    fontSize: 11,
+    fontWeight: '700',
     color: COLORS.textSecondary
   },
-  markAllBtn: {
-    backgroundColor: '#f1f5f9',
-    paddingHorizontal: SPACING.sm,
-    paddingVertical: SPACING.xs,
-    borderRadius: RADIUS.sm,
-    borderWidth: 1,
-    borderColor: COLORS.border
+  kpiValue: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: COLORS.primaryDark,
+    marginTop: 2
   },
-  markAllBtnText: {
-    fontSize: FONTS.small,
-    fontWeight: '600',
-    color: COLORS.textPrimary
-  },
-  listContent: {
-    padding: SPACING.md,
-    paddingBottom: 100
-  },
-  workerRow: {
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.md,
-    padding: SPACING.md,
-    marginBottom: SPACING.sm,
+  quickBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    paddingHorizontal: SPACING.md,
+    paddingVertical: 6,
+    gap: SPACING.sm
+  },
+  quickBarLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.textSecondary
+  },
+  quickBtn: {
+    backgroundColor: COLORS.surface,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: RADIUS.full,
+    borderWidth: 1,
+    borderColor: '#A5D6A7'
+  },
+  quickBtnRed: {
+    borderColor: '#FFCDD2'
+  },
+  quickBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: COLORS.primary
+  },
+  listContent: {
+    paddingHorizontal: SPACING.md,
+    paddingTop: SPACING.xs,
+    paddingBottom: SPACING.xxl
+  },
+  workerCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.surface,
+    padding: SPACING.md,
+    borderRadius: RADIUS.lg,
+    marginBottom: SPACING.sm,
     borderWidth: 1,
     borderColor: COLORS.border,
-    elevation: 1,
     shadowColor: COLORS.shadow,
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
-    shadowRadius: 2
+    shadowRadius: 2,
+    elevation: 1
+  },
+  workerAvatar: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: '#F1F8E9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#C8E6C9',
+    marginRight: SPACING.sm + 2
+  },
+  workerAvatarEmoji: {
+    fontSize: 24
   },
   workerInfo: {
-    flex: 1,
-    paddingRight: SPACING.sm
+    flex: 1
   },
   workerName: {
-    fontSize: FONTS.medium,
-    fontWeight: '700',
+    fontSize: 15,
+    fontWeight: '800',
     color: COLORS.textPrimary
   },
+  workerStatusText: {
+    fontSize: 12,
+    fontWeight: '700',
+    marginTop: 1
+  },
   workerSub: {
-    fontSize: FONTS.small,
+    fontSize: 11,
     color: COLORS.textSecondary,
     marginTop: 2
   },
-  toggleGroup: {
-    flexDirection: 'row',
-    gap: SPACING.xs
-  },
-  toggleBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: RADIUS.sm,
-    backgroundColor: '#f1f5f9',
+  statusToggleBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.border
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2
   },
-  toggleText: {
-    fontSize: FONTS.medium,
-    fontWeight: '700',
-    color: COLORS.textSecondary
+  btnPresent: {
+    backgroundColor: '#2E7D32'
   },
-  presentActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primaryDark
+  btnAbsent: {
+    backgroundColor: '#E53935'
   },
-  halfDayActive: {
-    backgroundColor: '#f59e0b',
-    borderColor: '#d97706'
+  statusToggleText: {
+    fontSize: 18,
+    fontWeight: '900'
   },
-  absentActive: {
-    backgroundColor: COLORS.danger,
-    borderColor: '#b91c1c'
-  },
-  leaveActive: {
-    backgroundColor: '#8b5cf6',
-    borderColor: '#7c3aed'
-  },
-  toggleTextActive: {
-    color: '#ffffff'
-  },
-  saveContainer: {
-    position: 'absolute',
-    bottom: SPACING.lg,
-    left: SPACING.lg,
-    right: SPACING.lg
+  bottomSaveBar: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    backgroundColor: COLORS.surface,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.border
   },
   saveBtn: {
-    elevation: 6,
-    shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 6
+    backgroundColor: COLORS.primary,
+    borderRadius: RADIUS.full,
+    paddingVertical: 12
   }
 });

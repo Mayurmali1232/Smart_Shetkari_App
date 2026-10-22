@@ -10,6 +10,7 @@ import StatCard from '../../components/StatCard';
 import DateSelector from '../../components/DateSelector';
 import LoadingIndicator from '../../components/LoadingIndicator';
 import ErrorMessage from '../../components/ErrorMessage';
+import BottomNav from '../../components/BottomNav';
 
 export default function DairyDashboardScreen() {
   const router = useRouter();
@@ -54,21 +55,21 @@ export default function DairyDashboardScreen() {
   };
 
   const quickNav = [
-    { title: t('dairy.animals') || 'My Animals', icon: '🐄', route: '/dairy/animals', color: '#15803d', sub: `${data?.totalAnimals || 0} Total` },
-    { title: t('dairy.addNewAnimal') || 'Add Animal', icon: '➕', route: '/dairy/animals/add', color: '#0f766e', sub: 'Register new' },
-    { title: t('dairy.milkProduction') || 'Milk Production', icon: '🥛', route: '/dairy/milk-production', color: '#0284c7', sub: `${data?.todayMilkProductionLiters || 0} L today` },
-    { title: t('dairy.milkSales') || 'Milk Sales', icon: '💰', route: '/dairy/milk-sales', color: '#16a34a', sub: `₹${data?.todayMilkSalesIncome || 0} today` },
-    { title: t('dairy.expenses') || 'Expenses', icon: '🌾', route: '/dairy/expenses', color: '#ea580c', sub: `₹${data?.todayExpenses || 0} today` },
-    { title: t('dairy.health') || 'Health & Vaccines', icon: '💉', route: '/dairy/health', color: '#7c3aed', sub: `${data?.upcomingHealthRemindersCount || 0} reminders` },
-    { title: t('dairy.profitLoss') || 'Profit & Loss', icon: '📈', route: '/dairy/profit-loss', color: '#059669', sub: 'Financial analysis' },
-    { title: t('dairy.reports') || 'Reports', icon: '📊', route: '/dairy/reports', color: '#475569', sub: 'Summary & trends' }
+    { title: t('dairy.animals') || 'जनावरे', icon: '🐄', route: '/dairy/animals', color: COLORS.primaryGreen, sub: `${data?.totalAnimals || 0} एकूण` },
+    { title: t('dairy.addNewAnimal') || 'नवीन जनावर', icon: '➕', route: '/dairy/animals/add', color: '#0f766e', sub: 'नोंद करा' },
+    { title: t('dairy.milkProduction') || 'दूध संकलन', icon: '🥛', route: '/dairy/milk-production', color: '#0284c7', sub: `${data?.todayMilkProductionLiters || 0} L आज` },
+    { title: t('dairy.milkSales') || 'दूध विक्री', icon: '💰', route: '/dairy/milk-sales', color: '#16a34a', sub: `₹${data?.todayMilkSalesIncome || 0} उत्पन्न` },
+    { title: t('dairy.expenses') || 'डेअरी खर्च', icon: '🌾', route: '/dairy/expenses', color: '#ea580c', sub: `₹${data?.todayExpenses || 0} आज` },
+    { title: t('dairy.health') || 'आरोग्य व लस', icon: '💉', route: '/dairy/health', color: '#7c3aed', sub: `${data?.upcomingHealthRemindersCount || 0} सूचना` },
+    { title: t('dairy.profitLoss') || 'नफा व तोटा', icon: '📈', route: '/dairy/profit-loss', color: '#059669', sub: 'हिशोब विश्लेषण' },
+    { title: t('dairy.reports') || 'अहवाल', icon: '📊', route: '/dairy/reports', color: '#475569', sub: 'मासिक तपशील' }
   ];
 
   return (
     <SafeAreaView style={styles.container}>
       <AppHeader
-        title={t('dairy.title') || 'Dairy & Livestock'}
-        subtitle={t('dairy.subtitle') || 'Animal Husbandry & Milk Management'}
+        title={t('dairy.title') || 'दूध व पशुसंवर्धन'}
+        subtitle={t('dairy.subtitle') || 'दैनिक दूध व जनावरे व्यवस्थापन'}
         showBack={true}
         fallbackRoute="/dashboard"
       />
@@ -80,7 +81,7 @@ export default function DairyDashboardScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={[COLORS.primary]}
+            colors={[COLORS.primaryGreen]}
           />
         }
       >
@@ -93,11 +94,47 @@ export default function DairyDashboardScreen() {
         {error ? <ErrorMessage message={error} onRetry={() => fetchDashboard(selectedDate)} /> : null}
 
         {loading && !refreshing ? (
-          <LoadingIndicator message={t('common.loading') || 'Loading dairy data...'} />
+          <LoadingIndicator message={t('common.loading') || 'डेअरी माहिती लोड होत आहे...'} />
         ) : data ? (
           <>
+            {/* Panel 8 Top Cow Banner Hero Card */}
+            <View style={styles.heroBanner}>
+              <View style={styles.heroTopRow}>
+                <View style={styles.heroIconBox}>
+                  <Text style={styles.heroIcon}>🐄</Text>
+                </View>
+                <View style={styles.heroTextCol}>
+                  <Text style={styles.heroBadge}>आजचे दूध संकलन</Text>
+                  <Text style={styles.heroLiters}>
+                    {data.todayMilkProductionLiters || 0} <Text style={styles.heroUnit}>लिटर</Text>
+                  </Text>
+                  <Text style={styles.heroIncome}>
+                    उत्पन्न: ₹{data.todayMilkSalesIncome || 0} • खर्च: ₹{data.todayExpenses || 0}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.heroActionRow}>
+                <TouchableOpacity
+                  style={styles.heroBtnPrimary}
+                  onPress={() => router.push('/dairy/milk-production')}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.heroBtnPrimaryText}>+ दूध नोंद करा</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.heroBtnSecondary}
+                  onPress={() => router.push('/dairy/milk-sales')}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.heroBtnSecondaryText}>💰 दूध विक्री</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
             {/* Quick Actions Hub */}
-            <Text style={styles.sectionHeader}>Dairy Modules / दुग्ध विभाग</Text>
+            <Text style={styles.sectionHeader}>डेअरी विभाग / Modules</Text>
             <View style={styles.navGrid}>
               {quickNav.map((item, idx) => (
                 <TouchableOpacity
@@ -119,10 +156,10 @@ export default function DairyDashboardScreen() {
             </View>
 
             {/* Today's Dairy Performance */}
-            <Text style={styles.sectionHeader}>Today's Performance / आजची स्थिती</Text>
+            <Text style={styles.sectionHeader}>आजची स्थिती / Performance</Text>
             <View style={styles.grid}>
               <StatCard
-                title={t('dairy.todayProduction') || "Today's Milk"}
+                title={t('dairy.todayProduction') || "आजचे दूध"}
                 value={`${data.todayMilkProductionLiters || 0} L`}
                 icon="🥛"
                 color="#0284c7"
@@ -131,7 +168,7 @@ export default function DairyDashboardScreen() {
                 onPress={() => router.push('/dairy/milk-production')}
               />
               <StatCard
-                title={t('dairy.todaySold') || 'Milk Sold Today'}
+                title={t('dairy.todaySold') || 'विक्री झालेले दूध'}
                 value={`${data.todayMilkSoldLiters || 0} L`}
                 icon="🚚"
                 color="#16a34a"
@@ -140,17 +177,17 @@ export default function DairyDashboardScreen() {
                 onPress={() => router.push('/dairy/milk-sales')}
               />
               <StatCard
-                title={t('dairy.todaySalesIncome') || "Today's Income"}
+                title={t('dairy.todaySalesIncome') || "दूध विक्री उत्पन्न"}
                 value={data.todayMilkSalesIncome || 0}
                 icon="💵"
-                color="#15803d"
-                bgColor="#bbf7d0"
+                color={COLORS.primaryGreen}
+                bgColor={COLORS.lightGreen}
                 isCurrency
                 style={styles.halfCard}
                 onPress={() => router.push('/dairy/milk-sales')}
               />
               <StatCard
-                title={t('dairy.todayExpenses') || "Today's Expenses"}
+                title={t('dairy.todayExpenses') || "आजचा खर्च"}
                 value={data.todayExpenses || 0}
                 icon="🌾"
                 color="#dc2626"
@@ -160,17 +197,17 @@ export default function DairyDashboardScreen() {
                 onPress={() => router.push('/dairy/expenses')}
               />
               <StatCard
-                title={t('dairy.todayProfit') || "Today's Est. Profit"}
+                title={t('dairy.todayProfit') || "अंदाजे नफा"}
                 value={data.todayEstimatedProfit || 0}
                 icon="📈"
-                color={data.todayEstimatedProfit >= 0 ? '#16a34a' : '#dc2626'}
-                bgColor={data.todayEstimatedProfit >= 0 ? '#dcfce7' : '#fee2e2'}
+                color={data.todayEstimatedProfit >= 0 ? COLORS.primaryGreen : '#dc2626'}
+                bgColor={data.todayEstimatedProfit >= 0 ? COLORS.lightGreen : '#fee2e2'}
                 isCurrency
                 style={styles.halfCard}
                 onPress={() => router.push('/dairy/profit-loss')}
               />
               <StatCard
-                title={t('dairy.outstandingReceivables') || 'Milk Payments Due'}
+                title={t('dairy.outstandingReceivables') || 'येणे बाकी रक्कम'}
                 value={data.outstandingMilkPayments || 0}
                 icon="⏳"
                 color="#b45309"
@@ -182,48 +219,64 @@ export default function DairyDashboardScreen() {
             </View>
 
             {/* Livestock Overview */}
-            <Text style={styles.sectionHeader}>Livestock Count / जनावरांची संख्या</Text>
+            <Text style={styles.sectionHeader}>जनावरांची संख्या / Livestock</Text>
             <View style={styles.animalsRow}>
-              <View style={styles.animalCountCard}>
+              <TouchableOpacity
+                style={styles.animalCountCard}
+                onPress={() => router.push('/dairy/animals')}
+                activeOpacity={0.7}
+              >
                 <Text style={styles.animalCountIcon}>🐄</Text>
                 <Text style={styles.animalCountNum}>{data.totalCows || 0}</Text>
-                <Text style={styles.animalCountLabel}>{t('dairy.cows') || 'Cows'}</Text>
-              </View>
-              <View style={styles.animalCountCard}>
+                <Text style={styles.animalCountLabel}>{t('dairy.cows') || 'गाई'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.animalCountCard}
+                onPress={() => router.push('/dairy/animals')}
+                activeOpacity={0.7}
+              >
                 <Text style={styles.animalCountIcon}>🐃</Text>
                 <Text style={styles.animalCountNum}>{data.totalBuffaloes || 0}</Text>
-                <Text style={styles.animalCountLabel}>{t('dairy.buffaloes') || 'Buffaloes'}</Text>
-              </View>
-              <View style={styles.animalCountCard}>
+                <Text style={styles.animalCountLabel}>{t('dairy.buffaloes') || 'म्हशी'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.animalCountCard}
+                onPress={() => router.push('/dairy/animals')}
+                activeOpacity={0.7}
+              >
                 <Text style={styles.animalCountIcon}>🥛</Text>
                 <Text style={styles.animalCountNum}>{data.totalMilkingAnimals || 0}</Text>
-                <Text style={styles.animalCountLabel}>{t('dairy.milking') || 'Milking'}</Text>
-              </View>
-              <View style={styles.animalCountCard}>
+                <Text style={styles.animalCountLabel}>{t('dairy.milking') || 'दूध देणाऱ्या'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.animalCountCard}
+                onPress={() => router.push('/dairy/animals')}
+                activeOpacity={0.7}
+              >
                 <Text style={styles.animalCountIcon}>🐾</Text>
                 <Text style={styles.animalCountNum}>{data.totalAnimals || 0}</Text>
-                <Text style={styles.animalCountLabel}>{t('dairy.totalAnimals') || 'Total'}</Text>
-              </View>
+                <Text style={styles.animalCountLabel}>{t('dairy.totalAnimals') || 'एकूण'}</Text>
+              </TouchableOpacity>
             </View>
 
             {/* Monthly Summary */}
-            <Text style={styles.sectionHeader}>This Month / चालू महिना</Text>
+            <Text style={styles.sectionHeader}>चालू महिना / This Month</Text>
             <View style={styles.monthCard}>
               <View style={styles.monthCol}>
-                <Text style={styles.monthLabel}>Monthly Milk</Text>
+                <Text style={styles.monthLabel}>एकूण दूध</Text>
                 <Text style={styles.monthValue}>{data.monthlyMilkProductionLiters || 0} L</Text>
               </View>
               <View style={styles.monthCol}>
-                <Text style={styles.monthLabel}>Sales Income</Text>
-                <Text style={[styles.monthValue, { color: '#16a34a' }]}>₹{data.monthlySalesIncome || 0}</Text>
+                <Text style={styles.monthLabel}>विक्री उत्पन्न</Text>
+                <Text style={[styles.monthValue, { color: COLORS.primaryGreen }]}>₹{data.monthlySalesIncome || 0}</Text>
               </View>
               <View style={styles.monthCol}>
-                <Text style={styles.monthLabel}>Expenses</Text>
+                <Text style={styles.monthLabel}>एकूण खर्च</Text>
                 <Text style={[styles.monthValue, { color: '#dc2626' }]}>₹{data.monthlyOperatingExpenses || 0}</Text>
               </View>
               <View style={styles.monthCol}>
-                <Text style={styles.monthLabel}>Est. Profit</Text>
-                <Text style={[styles.monthValue, { color: COLORS.primaryDark, fontWeight: '700' }]}>
+                <Text style={styles.monthLabel}>अंदाजे नफा</Text>
+                <Text style={[styles.monthValue, { color: COLORS.darkText, fontWeight: '800' }]}>
                   ₹{data.monthlyEstimatedOperatingProfit || 0}
                 </Text>
               </View>
@@ -233,15 +286,15 @@ export default function DairyDashboardScreen() {
             {data.upcomingReminders && data.upcomingReminders.length > 0 && (
               <View style={styles.reminderBox}>
                 <View style={styles.reminderHeader}>
-                  <Text style={styles.reminderTitle}>💉 Upcoming Vaccinations & Checkups</Text>
+                  <Text style={styles.reminderTitle}>💉 आगामी लसीकरण व तपासणी</Text>
                   <TouchableOpacity onPress={() => router.push('/dairy/health')}>
-                    <Text style={styles.reminderLink}>View All ›</Text>
+                    <Text style={styles.reminderLink}>सर्व पहा ›</Text>
                   </TouchableOpacity>
                 </View>
                 {data.upcomingReminders.slice(0, 3).map((r, i) => (
                   <View key={i} style={styles.reminderItem}>
-                    <Text style={styles.reminderAnimal}>🐄 {r.animalName} ({r.animalTagNumber || 'No Tag'})</Text>
-                    <Text style={styles.reminderTreatment}>{r.treatmentName} • Due: {r.nextDueDate}</Text>
+                    <Text style={styles.reminderAnimal}>🐄 {r.animalName} ({r.animalTagNumber || 'टॅग नाही'})</Text>
+                    <Text style={styles.reminderTreatment}>{r.treatmentName} • तारीख: {r.nextDueDate}</Text>
                   </View>
                 ))}
               </View>
@@ -249,6 +302,9 @@ export default function DairyDashboardScreen() {
           </>
         ) : null}
       </ScrollView>
+
+      {/* Bottom Navigation */}
+      <BottomNav active="records" />
     </SafeAreaView>
   );
 }
@@ -260,14 +316,109 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: SPACING.md,
-    paddingBottom: SPACING.xxl
+    paddingBottom: SPACING.xl
+  },
+  heroBanner: {
+    backgroundColor: COLORS.primaryGreen,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    marginBottom: SPACING.md,
+    shadowColor: COLORS.primaryGreen,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4
+  },
+  heroTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.md
+  },
+  heroIconBox: {
+    width: 54,
+    height: 54,
+    borderRadius: RADIUS.full,
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: SPACING.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2
+  },
+  heroIcon: {
+    fontSize: 28
+  },
+  heroTextCol: {
+    flex: 1
+  },
+  heroBadge: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#E8F5E9',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5
+  },
+  heroLiters: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#ffffff',
+    marginTop: 2
+  },
+  heroUnit: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#C8E6C9'
+  },
+  heroIncome: {
+    fontSize: 12,
+    color: '#E8F5E9',
+    marginTop: 2,
+    fontWeight: '500'
+  },
+  heroActionRow: {
+    flexDirection: 'row',
+    gap: SPACING.sm,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.2)',
+    paddingTop: SPACING.sm
+  },
+  heroBtnPrimary: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+    paddingVertical: 10,
+    borderRadius: RADIUS.md,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  heroBtnPrimaryText: {
+    color: COLORS.primaryGreen,
+    fontSize: FONTS.medium,
+    fontWeight: '800'
+  },
+  heroBtnSecondary: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.35)',
+    paddingVertical: 10,
+    borderRadius: RADIUS.md,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  heroBtnSecondaryText: {
+    color: '#ffffff',
+    fontSize: FONTS.medium,
+    fontWeight: '700'
   },
   sectionHeader: {
     fontSize: FONTS.medium + 1,
     fontWeight: '700',
-    color: COLORS.primaryDark,
-    marginTop: SPACING.md,
-    marginBottom: SPACING.sm
+    color: COLORS.darkText,
+    marginTop: SPACING.sm,
+    marginBottom: SPACING.xs + 2
   },
   navGrid: {
     flexDirection: 'row',
@@ -283,7 +434,7 @@ const styles = StyleSheet.create({
     padding: SPACING.sm + 2,
     borderRadius: RADIUS.md,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: '#E8F0E9',
     elevation: 1,
     shadowColor: COLORS.shadow,
     shadowOffset: { width: 0, height: 1 },
@@ -304,7 +455,7 @@ const styles = StyleSheet.create({
   navTitle: {
     fontSize: 13,
     fontWeight: '700',
-    color: COLORS.textPrimary
+    color: COLORS.darkText
   },
   navSub: {
     fontSize: 10,
@@ -313,7 +464,7 @@ const styles = StyleSheet.create({
   },
   navArrow: {
     fontSize: 18,
-    color: COLORS.textMuted,
+    color: COLORS.textSecondary,
     marginLeft: 2
   },
   grid: {
@@ -338,7 +489,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginHorizontal: 3,
     borderWidth: 1,
-    borderColor: COLORS.border
+    borderColor: '#E8F0E9'
   },
   animalCountIcon: {
     fontSize: 22,
@@ -347,7 +498,7 @@ const styles = StyleSheet.create({
   animalCountNum: {
     fontSize: FONTS.large,
     fontWeight: '800',
-    color: COLORS.textPrimary
+    color: COLORS.darkText
   },
   animalCountLabel: {
     fontSize: 11,
@@ -361,7 +512,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: '#E8F0E9',
     marginBottom: SPACING.md
   },
   monthCol: {
@@ -376,7 +527,7 @@ const styles = StyleSheet.create({
   monthValue: {
     fontSize: 13,
     fontWeight: '700',
-    color: COLORS.textPrimary
+    color: COLORS.darkText
   },
   reminderBox: {
     backgroundColor: '#faf5ff',
@@ -412,7 +563,7 @@ const styles = StyleSheet.create({
   reminderAnimal: {
     fontSize: 12,
     fontWeight: '700',
-    color: COLORS.textPrimary
+    color: COLORS.darkText
   },
   reminderTreatment: {
     fontSize: 11,

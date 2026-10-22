@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import AppHeader from '../components/AppHeader';
 import AppButton from '../components/AppButton';
 import ConfirmDialog from '../components/ConfirmDialog';
+import BottomNav from '../components/BottomNav';
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -27,26 +28,29 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <AppHeader
-        title={t('settings.title')}
-        subtitle="Manage account & preferences"
+        title={t('settings.title') || 'सेटिंग्ज'}
+        subtitle="खाते व ॲप प्राधान्ये"
         showBack={true}
         showLanguage={false}
+        fallbackRoute="/dashboard"
       />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Farmer Profile Card */}
+        {/* Panel 13: Farmer Profile Card */}
         {user ? (
-          <View style={styles.card}>
+          <View style={styles.profileCard}>
             <View style={styles.profileHeader}>
               <View style={styles.avatar}>
                 <Text style={styles.avatarText}>
                   {user.fullName ? user.fullName.charAt(0).toUpperCase() : '👨‍🌾'}
                 </Text>
               </View>
-              <View style={{ flex: 1, marginLeft: SPACING.md }}>
-                <Text style={styles.userName}>{user.fullName}</Text>
+              <View style={styles.profileInfo}>
+                <Text style={styles.userName}>{user.fullName || 'शेतकरी मित्र'}</Text>
                 <Text style={styles.userPhone}>📱 +91 {user.mobileNumber}</Text>
-                {user.email ? <Text style={styles.userEmail}>✉️ {user.email}</Text> : null}
+                <Text style={styles.userVillage}>
+                  📍 {user.village || 'गाव'}, {user.district || 'जिल्हा'}
+                </Text>
               </View>
             </View>
 
@@ -54,16 +58,16 @@ export default function SettingsScreen() {
 
             <View style={styles.locationGrid}>
               <View style={styles.locationItem}>
-                <Text style={styles.locationLabel}>{t('auth.village')}</Text>
+                <Text style={styles.locationLabel}>गाव</Text>
                 <Text style={styles.locationVal}>{user.village || '—'}</Text>
               </View>
               <View style={styles.locationItem}>
-                <Text style={styles.locationLabel}>{t('auth.district')}</Text>
+                <Text style={styles.locationLabel}>जिल्हा</Text>
                 <Text style={styles.locationVal}>{user.district || '—'}</Text>
               </View>
               <View style={styles.locationItem}>
-                <Text style={styles.locationLabel}>{t('auth.state')}</Text>
-                <Text style={styles.locationVal}>{user.state || 'Maharashtra'}</Text>
+                <Text style={styles.locationLabel}>राज्य</Text>
+                <Text style={styles.locationVal}>{user.state || 'महाराष्ट्र'}</Text>
               </View>
             </View>
           </View>
@@ -71,9 +75,9 @@ export default function SettingsScreen() {
 
         {/* Multilingual Support Section */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>🌐 {t('settings.changeLanguage')}</Text>
+          <Text style={styles.cardTitle}>🌐 भाषा निवडा / Change Language</Text>
           <Text style={styles.cardSubtitle}>
-            Select your preferred language. The entire application interface will switch immediately.
+            तुमच्या आवडीची भाषा निवडा. संपूर्ण ॲप लगेच निवडलेल्या भाषेत सुरू होईल.
           </Text>
 
           <View style={styles.langGrid}>
@@ -110,47 +114,51 @@ export default function SettingsScreen() {
 
         {/* App Info Card */}
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>ℹ️ {t('settings.appVersion')}</Text>
+          <Text style={styles.cardTitle}>ℹ️ ॲपबद्दल / App Info</Text>
           <View style={styles.infoRow}>
-            <Text style={styles.infoKey}>Application</Text>
+            <Text style={styles.infoKey}>अनुप्रयोग (App)</Text>
             <Text style={styles.infoValue}>Smart Shetkari 🌱</Text>
           </View>
           <View style={styles.infoRow}>
-            <Text style={styles.infoKey}>Version</Text>
-            <Text style={styles.infoValue}>v1.0.0 (Release)</Text>
+            <Text style={styles.infoKey}>आवृत्ती (Version)</Text>
+            <Text style={styles.infoValue}>v2.0.0 (Dairy Enhanced)</Text>
           </View>
           <View style={styles.infoRow}>
-            <Text style={styles.infoKey}>Currency</Text>
-            <Text style={styles.infoValue}>₹ INR (Indian Rupee)</Text>
+            <Text style={styles.infoKey}>चलन (Currency)</Text>
+            <Text style={styles.infoValue}>₹ INR (भारतीय रुपया)</Text>
           </View>
           <View style={styles.infoRow}>
-            <Text style={styles.infoKey}>Supported Languages</Text>
-            <Text style={styles.infoValue}>8 Indian Languages</Text>
+            <Text style={styles.infoKey}>समर्थित भाषा</Text>
+            <Text style={styles.infoValue}>मराठी, हिंदी, English सह 8 भाषा</Text>
           </View>
         </View>
 
         {/* Logout Button */}
         <View style={styles.logoutWrapper}>
-          <AppButton
-            title={`🚪 ${t('auth.logout')}`}
-            variant="outline"
+          <TouchableOpacity
+            style={styles.logoutBtn}
             onPress={() => setConfirmLogoutVisible(true)}
-            style={{ borderColor: COLORS.danger }}
-          />
+            activeOpacity={0.8}
+          >
+            <Text style={styles.logoutBtnText}>🚪 {t('auth.logout') || 'लॉग आऊट करा'}</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
 
       {/* Logout Confirmation */}
       <ConfirmDialog
         visible={confirmLogoutVisible}
-        title={t('auth.logout')}
-        message={t('settings.logoutConfirm')}
-        confirmLabel={t('auth.logout')}
-        cancelLabel={t('common.cancel')}
+        title={t('auth.logout') || 'लॉग आऊट'}
+        message={t('settings.logoutConfirm') || 'तुम्हाला खात्यातून बाहेर पडायचे आहे का?'}
+        confirmLabel={t('auth.logout') || 'बाहेर पडा'}
+        cancelLabel={t('common.cancel') || 'रद्द करा'}
         isDanger={true}
         onConfirm={handleLogout}
         onCancel={() => setConfirmLogoutVisible(false)}
       />
+
+      {/* Bottom Navigation */}
+      <BottomNav active="settings" />
     </SafeAreaView>
   );
 }
@@ -162,57 +170,63 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: SPACING.md,
-    paddingBottom: SPACING.xxl
+    paddingBottom: SPACING.xl
   },
-  card: {
+  profileCard: {
     backgroundColor: COLORS.surface,
     borderRadius: RADIUS.lg,
     padding: SPACING.md,
     marginBottom: SPACING.md,
     borderWidth: 1,
-    borderColor: COLORS.border,
-    elevation: 1,
+    borderColor: '#E8F0E9',
+    elevation: 2,
     shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4
   },
   profileHeader: {
     flexDirection: 'row',
     alignItems: 'center'
   },
   avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: COLORS.primaryLight,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: COLORS.lightGreen,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#86efac'
+    borderWidth: 2,
+    borderColor: '#A5D6A7'
   },
   avatarText: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: COLORS.primaryDark
+    fontSize: 26,
+    fontWeight: '800',
+    color: COLORS.primaryGreen
+  },
+  profileInfo: {
+    flex: 1,
+    marginLeft: SPACING.md
   },
   userName: {
     fontSize: FONTS.large,
-    fontWeight: '700',
-    color: COLORS.primaryDark
+    fontWeight: '800',
+    color: COLORS.darkText
   },
   userPhone: {
     fontSize: FONTS.small,
     color: COLORS.textSecondary,
     marginTop: 2
   },
-  userEmail: {
-    fontSize: 12,
-    color: COLORS.textSecondary
+  userVillage: {
+    fontSize: FONTS.small,
+    color: COLORS.primaryGreen,
+    fontWeight: '600',
+    marginTop: 2
   },
   divider: {
     height: 1,
-    backgroundColor: COLORS.border,
+    backgroundColor: '#F0F4F1',
     marginVertical: SPACING.md
   },
   locationGrid: {
@@ -220,46 +234,62 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between'
   },
   locationItem: {
-    flex: 1,
-    alignItems: 'center'
+    alignItems: 'center',
+    flex: 1
   },
   locationLabel: {
     fontSize: 11,
     color: COLORS.textSecondary,
+    fontWeight: '600',
     marginBottom: 2
   },
   locationVal: {
-    fontSize: FONTS.small + 1,
-    fontWeight: '600',
-    color: COLORS.textPrimary
+    fontSize: FONTS.medium,
+    fontWeight: '700',
+    color: COLORS.darkText
+  },
+  card: {
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.md,
+    marginBottom: SPACING.md,
+    borderWidth: 1,
+    borderColor: '#E8F0E9',
+    elevation: 1,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 3
   },
   cardTitle: {
     fontSize: FONTS.medium + 1,
     fontWeight: '700',
-    color: COLORS.primaryDark,
+    color: COLORS.darkText,
     marginBottom: 4
   },
   cardSubtitle: {
     fontSize: FONTS.small,
     color: COLORS.textSecondary,
-    marginBottom: SPACING.md
+    marginBottom: SPACING.md,
+    lineHeight: 18
   },
   langGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: SPACING.xs
+    gap: SPACING.sm
   },
   langCard: {
     width: '48.5%',
-    padding: SPACING.sm + 2,
-    backgroundColor: COLORS.background,
+    backgroundColor: '#F8FDF6',
+    borderWidth: 1,
+    borderColor: '#D0E5D5',
     borderRadius: RADIUS.md,
-    borderWidth: 1.5,
-    borderColor: COLORS.border
+    padding: SPACING.sm + 2
   },
   langCardActive: {
-    backgroundColor: COLORS.primaryLight,
-    borderColor: COLORS.primary
+    backgroundColor: COLORS.lightGreen,
+    borderColor: COLORS.primaryGreen,
+    borderWidth: 2
   },
   langRow: {
     flexDirection: 'row',
@@ -272,7 +302,16 @@ const styles = StyleSheet.create({
     color: COLORS.textPrimary
   },
   langNativeActive: {
-    color: COLORS.primaryDark
+    color: COLORS.darkText,
+    fontWeight: '800'
+  },
+  activeCheck: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: COLORS.primaryGreen,
+    alignItems: 'center',
+    justifyContent: 'center'
   },
   langEnglish: {
     fontSize: 11,
@@ -280,22 +319,15 @@ const styles = StyleSheet.create({
     marginTop: 2
   },
   langEnglishActive: {
-    color: COLORS.primaryDark
-  },
-  activeCheck: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: COLORS.primary,
-    alignItems: 'center',
-    justifyContent: 'center'
+    color: COLORS.primaryGreen,
+    fontWeight: '600'
   },
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: SPACING.xs + 2,
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#f1f5f9'
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F4F1'
   },
   infoKey: {
     fontSize: FONTS.small,
@@ -303,11 +335,25 @@ const styles = StyleSheet.create({
   },
   infoValue: {
     fontSize: FONTS.small,
-    fontWeight: '600',
-    color: COLORS.textPrimary
+    fontWeight: '700',
+    color: COLORS.darkText
   },
   logoutWrapper: {
     marginTop: SPACING.sm,
-    marginBottom: SPACING.xl
+    marginBottom: SPACING.lg
+  },
+  logoutBtn: {
+    backgroundColor: '#FEE2E2',
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
+    paddingVertical: 14,
+    borderRadius: RADIUS.md,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  logoutBtnText: {
+    color: COLORS.danger,
+    fontSize: FONTS.medium,
+    fontWeight: '700'
   }
 });

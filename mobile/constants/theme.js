@@ -1,24 +1,26 @@
+// Smart Shetkari Design System Tokens (Matching UI Specification Poster)
 export const COLORS = {
-  primary: '#15803d',       // Forest Green
-  primaryLight: '#dcfce7',  // Very light green background
-  primaryDark: '#14532d',
-  secondary: '#16a34a',     // Emerald
-  accent: '#ca8a04',        // Earthy amber/gold for warnings/pending
-  danger: '#dc2626',        // Red for alerts/absent
-  dangerLight: '#fee2e2',
-  info: '#2563eb',          // Blue for info
-  infoLight: '#dbeafe',
-  background: '#f8fafc',    // Off-white / light slate
-  surface: '#ffffff',       // Pure white cards
-  textPrimary: '#0f172a',   // Dark slate
-  textSecondary: '#64748b', // Medium gray
-  textMuted: '#94a3b8',
-  border: '#e2e8f0',
-  borderLight: '#f1f5f9',
-  shadow: '#000000',
-  success: '#16a34a',
-  halfDay: '#f59e0b',
-  leave: '#8b5cf6'
+  primary: '#2E7D32',       // Primary Green (#2E7D32 from poster)
+  primaryLight: '#E8F5E9',  // Light Green background (#E8F5E9)
+  primaryDark: '#1B5E20',   // Dark Forest Green text (#1B5E20)
+  secondary: '#388E3C',     // Leaf Green
+  accent: '#FFA726',        // Amber for warnings/pending (#FFA726)
+  warning: '#FFA726',
+  danger: '#E53935',        // Error Red (#E53935)
+  dangerLight: '#FFEBEE',
+  info: '#1E88E5',          // Sky Blue
+  infoLight: '#E3F2FD',
+  background: '#F8FDF6',    // Fresh Mint Background (#F8FDF6 from poster)
+  surface: '#FFFFFF',       // Clean White Cards
+  textPrimary: '#1B5E20',   // Primary Text (#1B5E20 from poster)
+  textSecondary: '#546E7A', // Secondary Text (#546E7A from poster)
+  textMuted: '#90A4AE',     // Muted Blue-Grey
+  border: '#E0E0E0',        // Subtle Clean Border
+  borderLight: '#F1F8E9',   // Very Soft Green Border
+  shadow: '#1B5E20',
+  success: '#2E7D32',
+  halfDay: '#FFA726',
+  leave: '#8E24AA'
 };
 
 export const SPACING = {
@@ -40,8 +42,9 @@ export const FONTS = {
 };
 
 export const RADIUS = {
-  sm: 6,
+  sm: 8,
   md: 12,
   lg: 18,
+  xl: 24,
   full: 9999
 };

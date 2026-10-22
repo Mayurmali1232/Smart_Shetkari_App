@@ -9,6 +9,7 @@ import AppHeader from '../../components/AppHeader';
 import AppButton from '../../components/AppButton';
 import LoadingIndicator from '../../components/LoadingIndicator';
 import ErrorMessage from '../../components/ErrorMessage';
+import BottomNav from '../../components/BottomNav';
 
 export default function ReportsScreen() {
   const router = useRouter();
@@ -93,7 +94,7 @@ export default function ReportsScreen() {
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-        Alert.alert(t('common.success'), 'CSV report downloaded successfully!');
+        Alert.alert(t('common.success') || 'यशस्वी', 'CSV अहवाल यशस्वीरीत्या डाऊनलोड झाला!');
       } else {
         await Share.share({
           title: `Smart Shetkari Report (${startDate} to ${endDate})`,
@@ -101,30 +102,58 @@ export default function ReportsScreen() {
         });
       }
     } catch (e) {
-      Alert.alert(t('common.error'), e.message || 'Failed to export CSV');
+      Alert.alert(t('common.error') || 'त्रुटी', e.message || 'अहवाल डाउनलोड करताना त्रुटी आली');
     } finally {
       setExporting(false);
     }
   };
 
+  const reportCategories = [
+    { title: 'दैनिक अहवाल', icon: '📅', color: '#0284C7', bg: '#E0F2FE', sub: 'रोजचा हिशोब', onPress: () => handlePresetSelect('month') },
+    { title: 'मासिक अहवाल', icon: '📊', color: '#16A34A', bg: '#DCFCE7', sub: 'महिन्याची ताळेबंद', onPress: () => handlePresetSelect('lastMonth') },
+    { title: 'खर्च अहवाल', icon: '🌾', color: '#EA580C', bg: '#FFEDD5', sub: 'खर्च तपशील', onPress: () => router.push('/expenses') },
+    { title: 'दूध अहवाल', icon: '🥛', color: '#0D9488', bg: '#CCFBF1', sub: 'डेअरी उत्पादन', onPress: () => router.push('/dairy/reports') }
+  ];
+
   return (
     <SafeAreaView style={styles.container}>
       <AppHeader
-        title={t('reports.title')}
-        subtitle="Operational & Financial Statements"
+        title={t('reports.title') || 'अहवाल व ताळेबंद'}
+        subtitle="शेती, कामगार व ट्रॅक्टर संपूर्ण हिशोब"
         showBack={true}
+        fallbackRoute="/dashboard"
       />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.primary]} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.primaryGreen]} />}
       >
+        {/* Panel 12: 4 Report Category Cards */}
+        <Text style={styles.sectionHeading}>अहवाल प्रकार / Report Modules</Text>
+        <View style={styles.reportGrid}>
+          {reportCategories.map((r, i) => (
+            <TouchableOpacity
+              key={i}
+              style={styles.reportCard}
+              onPress={r.onPress}
+              activeOpacity={0.7}
+            >
+              <View style={[styles.reportIconBox, { backgroundColor: r.bg }]}>
+                <Text style={styles.reportIcon}>{r.icon}</Text>
+              </View>
+              <Text style={styles.reportTitle}>{r.title}</Text>
+              <Text style={styles.reportSub}>{r.sub}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
         {/* Preset Range Selector */}
+        <Text style={styles.sectionHeading}>कालावधी निवडा / Select Period</Text>
         <View style={styles.presetRow}>
           {[
-            { id: 'month', label: 'This Month' },
-            { id: 'lastMonth', label: 'Last Month' },
-            { id: 'year', label: 'This Year' }
+            { id: 'month', label: 'चालू महिना' },
+            { id: 'lastMonth', label: 'मागील महिना' },
+            { id: 'year', label: 'चालू वर्ष' }
           ].map((p) => (
             <TouchableOpacity
               key={p.id}
@@ -140,14 +169,14 @@ export default function ReportsScreen() {
 
         <View style={styles.dateLabelRow}>
           <Text style={styles.dateRangeText}>
-            Showing report: <Text style={{ fontWeight: '700' }}>{startDate}</Text> to <Text style={{ fontWeight: '700' }}>{endDate}</Text>
+            अहवाल कालावधी: <Text style={{ fontWeight: '800', color: COLORS.darkText }}>{startDate}</Text> ते <Text style={{ fontWeight: '800', color: COLORS.darkText }}>{endDate}</Text>
           </Text>
         </View>
 
         {error ? <ErrorMessage message={error} onRetry={() => fetchSummary(startDate, endDate)} /> : null}
 
         {loading && !refreshing ? (
-          <LoadingIndicator />
+          <LoadingIndicator message={t('common.loading') || 'अहवाल तयार होत आहे...'} />
         ) : summary ? (
           <>
             {/* Net Farm Cash Flow Card */}
@@ -155,7 +184,7 @@ export default function ReportsScreen() {
               styles.netProfitCard,
               (summary.netProfit || 0) >= 0 ? styles.profitBg : styles.lossBg
             ]}>
-              <Text style={styles.netProfitLabel}>Realized Net Farm Cash Flow</Text>
+              <Text style={styles.netProfitLabel}>निव्वळ शेती नफा / निव्वळ रोकड (Net Cash Flow)</Text>
               <Text style={[
                 styles.netProfitValue,
                 (summary.netProfit || 0) >= 0 ? styles.profitColor : styles.lossColor
@@ -163,33 +192,33 @@ export default function ReportsScreen() {
                 {(summary.netProfit || 0) >= 0 ? `+₹${summary.netProfit}` : `-₹${Math.abs(summary.netProfit)}`}
               </Text>
               <Text style={styles.netProfitHint}>
-                (Cash Collected - Worker Wages Paid - Tractor Expenses)
+                (एकूण जमा रक्कम - मजुरी दिलेली - ट्रॅक्टर व शेती खर्च)
               </Text>
             </View>
 
             {/* Income Breakdown */}
             <View style={styles.sectionCard}>
-              <Text style={styles.sectionTitle}>🌾 Tractor Operations & Revenue</Text>
+              <Text style={styles.sectionTitle}>🌾 ट्रॅक्टर कामे व उत्पन्न</Text>
 
               <View style={styles.statRow}>
-                <Text style={styles.statLabel}>Completed Work Value</Text>
+                <Text style={styles.statLabel}>एकूण केलेल्या कामांचे मूल्य</Text>
                 <Text style={styles.statVal}>₹{summary.totalCompletedWorkValue || 0}</Text>
               </View>
 
               <View style={styles.statRow}>
-                <Text style={[styles.statLabel, { color: COLORS.secondary, fontWeight: '700' }]}>
-                  Actual Cash Collected
+                <Text style={[styles.statLabel, { color: COLORS.primaryGreen, fontWeight: '700' }]}>
+                  प्रत्यक्ष मिळालेली रक्कम
                 </Text>
-                <Text style={[styles.statVal, { color: COLORS.secondary, fontWeight: '700' }]}>
+                <Text style={[styles.statVal, { color: COLORS.primaryGreen, fontWeight: '800' }]}>
                   ₹{summary.totalTractorIncomeCollected || 0}
                 </Text>
               </View>
 
               <View style={styles.statRow}>
                 <Text style={[styles.statLabel, { color: COLORS.danger }]}>
-                  Customer Outstanding Receivables
+                  शेतकऱ्यांकडून येणे बाकी
                 </Text>
-                <Text style={[styles.statVal, { color: COLORS.danger, fontWeight: '700' }]}>
+                <Text style={[styles.statVal, { color: COLORS.danger, fontWeight: '800' }]}>
                   ₹{summary.outstandingCustomerReceivables || 0}
                 </Text>
               </View>
@@ -197,27 +226,27 @@ export default function ReportsScreen() {
 
             {/* Labour & Wage Breakdown */}
             <View style={styles.sectionCard}>
-              <Text style={styles.sectionTitle}>👥 Worker Wages & Labour</Text>
+              <Text style={styles.sectionTitle}>👥 कामगार हजेरी व मजुरी</Text>
 
               <View style={styles.statRow}>
-                <Text style={styles.statLabel}>Total Agreed Labour Wages</Text>
+                <Text style={styles.statLabel}>एकूण ठरलेली मजुरी</Text>
                 <Text style={styles.statVal}>₹{summary.totalWorkerWagesAgreed || 0}</Text>
               </View>
 
               <View style={styles.statRow}>
-                <Text style={[styles.statLabel, { color: '#2563eb', fontWeight: '700' }]}>
-                  Wages Paid to Date
+                <Text style={[styles.statLabel, { color: '#0284C7', fontWeight: '700' }]}>
+                  आतापर्यंत अदा केलेली मजुरी
                 </Text>
-                <Text style={[styles.statVal, { color: '#2563eb', fontWeight: '700' }]}>
+                <Text style={[styles.statVal, { color: '#0284C7', fontWeight: '800' }]}>
                   ₹{summary.totalWorkerWagesPaid || 0}
                 </Text>
               </View>
 
               <View style={styles.statRow}>
-                <Text style={[styles.statLabel, { color: '#b45309' }]}>
-                  Outstanding Worker Wages Payable
+                <Text style={[styles.statLabel, { color: '#B45309' }]}>
+                  कामगारांना देणे बाकी
                 </Text>
-                <Text style={[styles.statVal, { color: '#b45309', fontWeight: '700' }]}>
+                <Text style={[styles.statVal, { color: '#B45309', fontWeight: '800' }]}>
                   ₹{summary.outstandingWorkerPayables || 0}
                 </Text>
               </View>
@@ -225,11 +254,11 @@ export default function ReportsScreen() {
 
             {/* Tractor Expenses Breakdown */}
             <View style={styles.sectionCard}>
-              <Text style={styles.sectionTitle}>⛽ Tractor & Machinery Expenses</Text>
+              <Text style={styles.sectionTitle}>⛽ ट्रॅक्टर व यंत्रसामग्री खर्च</Text>
 
               <View style={styles.statRow}>
-                <Text style={styles.statLabel}>Total Fuel, Servicing & Repairs</Text>
-                <Text style={[styles.statVal, { color: COLORS.danger, fontWeight: '700' }]}>
+                <Text style={styles.statLabel}>इंधन, सर्व्हिसिंग व दुरुस्ती</Text>
+                <Text style={[styles.statVal, { color: COLORS.danger, fontWeight: '800' }]}>
                   ₹{summary.totalTractorExpenses || 0}
                 </Text>
               </View>
@@ -238,16 +267,18 @@ export default function ReportsScreen() {
             {/* Export CSV Button */}
             <View style={styles.exportContainer}>
               <AppButton
-                title={exporting ? 'Generating CSV...' : '📥 Export Detailed CSV Report'}
+                title={exporting ? 'अहवाल तयार होत आहे...' : '📥 संपूर्ण CSV अहवाल डाउनलोड करा'}
                 onPress={handleExportCsv}
                 loading={exporting}
-                variant="primary"
-                style={{ backgroundColor: COLORS.primaryDark }}
+                style={styles.exportBtn}
               />
             </View>
           </>
         ) : null}
       </ScrollView>
+
+      {/* Bottom Navigation */}
+      <BottomNav active="records" />
     </SafeAreaView>
   );
 }
@@ -259,25 +290,75 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: SPACING.md,
-    paddingBottom: SPACING.xxl
+    paddingBottom: SPACING.xl
+  },
+  sectionHeading: {
+    fontSize: FONTS.medium + 1,
+    fontWeight: '700',
+    color: COLORS.darkText,
+    marginBottom: SPACING.xs + 2,
+    marginTop: SPACING.xs
+  },
+  reportGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
+    marginBottom: SPACING.md
+  },
+  reportCard: {
+    width: '48.5%',
+    backgroundColor: COLORS.surface,
+    padding: SPACING.md,
+    borderRadius: RADIUS.lg,
+    borderWidth: 1,
+    borderColor: '#E8F0E9',
+    elevation: 2,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    alignItems: 'center'
+  },
+  reportIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: RADIUS.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: SPACING.xs + 2
+  },
+  reportIcon: {
+    fontSize: 24
+  },
+  reportTitle: {
+    fontSize: FONTS.medium,
+    fontWeight: '700',
+    color: COLORS.darkText,
+    textAlign: 'center'
+  },
+  reportSub: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+    textAlign: 'center'
   },
   presetRow: {
     flexDirection: 'row',
-    gap: SPACING.sm,
-    marginBottom: SPACING.sm
+    gap: SPACING.xs,
+    marginBottom: SPACING.xs + 2
   },
   presetBtn: {
     flex: 1,
-    paddingVertical: SPACING.sm,
-    backgroundColor: COLORS.surface,
-    borderRadius: RADIUS.md,
+    paddingVertical: 8,
+    borderRadius: RADIUS.full,
+    backgroundColor: '#F1F5F9',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: COLORS.border
   },
   presetBtnActive: {
-    backgroundColor: COLORS.primaryLight,
-    borderColor: COLORS.primary
+    backgroundColor: COLORS.lightGreen,
+    borderColor: COLORS.primaryGreen
   },
   presetText: {
     fontSize: FONTS.small,
@@ -285,95 +366,102 @@ const styles = StyleSheet.create({
     fontWeight: '600'
   },
   presetTextActive: {
-    color: COLORS.primaryDark,
-    fontWeight: '700'
+    color: COLORS.darkText,
+    fontWeight: '800'
   },
   dateLabelRow: {
-    alignItems: 'center',
-    marginBottom: SPACING.md
+    paddingVertical: SPACING.xs,
+    marginBottom: SPACING.sm
   },
   dateRangeText: {
     fontSize: FONTS.small,
-    color: COLORS.textSecondary
+    color: COLORS.textSecondary,
+    textAlign: 'center'
   },
   netProfitCard: {
     borderRadius: RADIUS.lg,
-    padding: SPACING.lg,
-    alignItems: 'center',
+    padding: SPACING.md,
     marginBottom: SPACING.md,
-    borderWidth: 1.5
+    borderWidth: 1,
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4
   },
   profitBg: {
-    backgroundColor: '#dcfce7',
-    borderColor: '#86efac'
+    backgroundColor: COLORS.lightGreen,
+    borderColor: '#A5D6A7'
   },
   lossBg: {
-    backgroundColor: '#fee2e2',
-    borderColor: '#fca5a5'
+    backgroundColor: '#FEE2E2',
+    borderColor: '#FCA5A5'
   },
   netProfitLabel: {
-    fontSize: FONTS.small,
+    fontSize: 12,
     fontWeight: '700',
     color: COLORS.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5
   },
   netProfitValue: {
-    fontSize: 34,
+    fontSize: 28,
     fontWeight: '800',
-    marginVertical: SPACING.xs
+    marginVertical: 4
   },
   profitColor: {
-    color: COLORS.secondary
+    color: COLORS.primaryGreen
   },
   lossColor: {
     color: COLORS.danger
   },
   netProfitHint: {
     fontSize: 11,
-    color: COLORS.textSecondary
+    color: COLORS.textSecondary,
+    textAlign: 'center'
   },
   sectionCard: {
     backgroundColor: COLORS.surface,
     borderRadius: RADIUS.lg,
     padding: SPACING.md,
-    marginBottom: SPACING.md,
+    marginBottom: SPACING.sm,
     borderWidth: 1,
-    borderColor: COLORS.border,
+    borderColor: '#E8F0E9',
     elevation: 1,
     shadowColor: COLORS.shadow,
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2
+    shadowOpacity: 0.04,
+    shadowRadius: 3
   },
   sectionTitle: {
-    fontSize: FONTS.medium,
+    fontSize: FONTS.medium + 1,
     fontWeight: '700',
-    color: COLORS.primaryDark,
-    marginBottom: SPACING.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    paddingBottom: SPACING.xs
+    color: COLORS.darkText,
+    marginBottom: SPACING.sm
   },
   statRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: SPACING.sm,
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#f1f5f9'
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F4F1'
   },
   statLabel: {
-    fontSize: FONTS.small + 1,
-    color: COLORS.textPrimary,
-    flex: 1
+    fontSize: FONTS.small,
+    color: COLORS.textSecondary
   },
   statVal: {
     fontSize: FONTS.medium,
-    fontWeight: '600',
-    color: COLORS.textPrimary
+    fontWeight: '700',
+    color: COLORS.darkText
   },
   exportContainer: {
     marginTop: SPACING.md,
-    marginBottom: SPACING.xl
+    marginBottom: SPACING.lg
+  },
+  exportBtn: {
+    backgroundColor: COLORS.primaryGreen,
+    borderRadius: RADIUS.md
   }
 });

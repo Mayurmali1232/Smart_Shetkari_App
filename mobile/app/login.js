@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADIUS, FONTS } from '../constants/theme';
@@ -18,6 +18,7 @@ export default function LoginScreen() {
 
   const [mobileNumber, setMobileNumber] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [langModalVisible, setLangModalVisible] = useState(false);
@@ -26,15 +27,15 @@ export default function LoginScreen() {
     setError('');
     const cleanMobile = mobileNumber.trim();
     if (!cleanMobile) {
-      setError(t('auth.mobilePlaceholder'));
+      setError(t('auth.mobilePlaceholder') || 'Please enter mobile number');
       return;
     }
     if (!/^[6-9]\d{9}$/.test(cleanMobile)) {
-      setError('Please enter a valid 10-digit mobile number');
+      setError('Please enter a valid 10-digit mobile number / वैध 10-अंकी मोबाईल नंबर टाका');
       return;
     }
     if (!password) {
-      setError(t('auth.passwordPlaceholder'));
+      setError(t('auth.passwordPlaceholder') || 'Please enter password');
       return;
     }
 
@@ -45,14 +46,14 @@ export default function LoginScreen() {
     if (result.success) {
       router.replace('/dashboard');
     } else {
-      setError(result.message || 'Login failed. Please check your credentials.');
+      setError(result.message || 'Login failed. Please check credentials / मोबाईल किंवा पासवर्ड तपासा.');
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <AppHeader
-        title={t('auth.login')}
+        title={t('auth.login') || 'लॉग इन'}
         showBack
         fallbackRoute="/"
         onLanguagePress={() => setLangModalVisible(true)}
@@ -62,53 +63,88 @@ export default function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={{ flex: 1 }}
       >
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <View style={styles.header}>
-            <Text style={styles.title}>{t('auth.login')}</Text>
-            <Text style={styles.subtitle}>{t('auth.welcomeSubtitle')}</Text>
+        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          {/* Farm Header Illustration */}
+          <View style={styles.bannerBox}>
+            <Image
+              source={require('../assets/farm_header_illustration.png')}
+              style={styles.bannerImg}
+              resizeMode="cover"
+            />
+            <View style={styles.bannerOverlay} />
+          </View>
+
+          {/* Logo & Greeting Box */}
+          <View style={styles.brandBox}>
+            <View style={styles.logoBadge}>
+              <Image
+                source={require('../assets/smart_shetkari_logo.png')}
+                style={styles.logoImg}
+                resizeMode="contain"
+              />
+            </View>
+            <Text style={styles.brandTitle}>Smart Shetkari</Text>
+            <Text style={styles.brandSubtitle}>शेतकऱ्यांचा स्मार्ट साथी</Text>
           </View>
 
           {error ? <ErrorMessage message={error} /> : null}
 
-          <View style={styles.form}>
+          <View style={styles.formCard}>
             <AppInput
-              label={t('auth.mobileNumber')}
-              placeholder={t('auth.mobilePlaceholder')}
+              label={t('auth.mobileNumber') || 'मोबाईल नंबर *'}
+              placeholder="10-digit mobile number"
               value={mobileNumber}
               onChangeText={setMobileNumber}
               keyboardType="phone-pad"
               leftIcon={<Text style={styles.inputEmoji}>📱</Text>}
             />
 
-            <AppInput
-              label={t('auth.password')}
-              placeholder={t('auth.passwordPlaceholder')}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              leftIcon={<Text style={styles.inputEmoji}>🔒</Text>}
-            />
+            <View style={styles.passwordContainer}>
+              <AppInput
+                label={t('auth.password') || 'पासवर्ड *'}
+                placeholder="Enter password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+                leftIcon={<Text style={styles.inputEmoji}>🔒</Text>}
+              />
+              <TouchableOpacity
+                style={styles.eyeToggle}
+                onPress={() => setShowPassword(!showPassword)}
+              >
+                <Text style={styles.eyeIcon}>{showPassword ? '👁️' : '🙈'}</Text>
+              </TouchableOpacity>
+            </View>
 
             <TouchableOpacity
               style={styles.forgotPassBtn}
               onPress={() => router.push('/forgot-password')}
             >
-              <Text style={styles.forgotPassText}>{t('auth.forgotPassword')}</Text>
+              <Text style={styles.forgotPassText}>पासवर्ड विसरलात? / Forgot Password?</Text>
             </TouchableOpacity>
 
             <AppButton
-              title={t('auth.loginButton')}
+              title="लॉग इन / Log In"
               onPress={handleLogin}
               loading={loading}
               style={styles.submitBtn}
             />
 
-            <View style={styles.registerPrompt}>
-              <Text style={styles.promptText}>{t('auth.dontHaveAccount')} </Text>
-              <TouchableOpacity onPress={() => router.push('/register')}>
-                <Text style={styles.registerLink}>{t('auth.registerButton')}</Text>
-              </TouchableOpacity>
+            {/* Divider */}
+            <View style={styles.dividerRow}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>किंवा / OR</Text>
+              <View style={styles.dividerLine} />
             </View>
+
+            {/* Register New Account */}
+            <TouchableOpacity
+              style={styles.registerBtn}
+              onPress={() => router.push('/register')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.registerBtnText}>नवीन खाते तयार करा / Create Account</Text>
+            </TouchableOpacity>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -127,52 +163,129 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background
   },
   content: {
-    padding: SPACING.lg
+    paddingBottom: SPACING.xxl
   },
-  header: {
-    marginVertical: SPACING.lg
+  bannerBox: {
+    width: '100%',
+    height: 140,
+    backgroundColor: COLORS.primaryLight,
+    position: 'relative'
   },
-  title: {
-    fontSize: FONTS.header,
+  bannerImg: {
+    width: '100%',
+    height: '100%'
+  },
+  bannerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(27, 94, 32, 0.1)'
+  },
+  brandBox: {
+    alignItems: 'center',
+    marginTop: -35,
+    marginBottom: SPACING.md
+  },
+  logoBadge: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3
+  },
+  logoImg: {
+    width: 60,
+    height: 60,
+    borderRadius: 30
+  },
+  brandTitle: {
+    fontSize: 22,
     fontWeight: '800',
-    color: COLORS.primaryDark
+    color: COLORS.primaryDark,
+    marginTop: 6
   },
-  subtitle: {
-    fontSize: FONTS.regular,
-    color: COLORS.textSecondary,
-    marginTop: SPACING.xs
+  brandSubtitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.primary,
+    marginTop: 2
   },
-  form: {
-    marginTop: SPACING.sm
+  formCard: {
+    marginHorizontal: SPACING.lg,
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.xl,
+    padding: SPACING.lg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    shadowColor: COLORS.shadow,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 2
   },
   inputEmoji: {
     fontSize: 18
   },
+  passwordContainer: {
+    position: 'relative'
+  },
+  eyeToggle: {
+    position: 'absolute',
+    right: 12,
+    top: 36,
+    padding: 6
+  },
+  eyeIcon: {
+    fontSize: 16
+  },
   forgotPassBtn: {
     alignSelf: 'flex-end',
-    marginBottom: SPACING.lg
+    marginBottom: SPACING.md,
+    marginTop: 2
   },
   forgotPassText: {
     color: COLORS.primary,
-    fontSize: FONTS.regular,
+    fontSize: 12,
     fontWeight: '600'
   },
   submitBtn: {
-    marginTop: SPACING.xs
+    backgroundColor: COLORS.primary,
+    borderRadius: RADIUS.full,
+    paddingVertical: 14
   },
-  registerPrompt: {
+  dividerRow: {
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: SPACING.xl
+    marginVertical: SPACING.lg
   },
-  promptText: {
-    color: COLORS.textSecondary,
-    fontSize: FONTS.regular
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: COLORS.border
   },
-  registerLink: {
+  dividerText: {
+    marginHorizontal: SPACING.sm,
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.textSecondary
+  },
+  registerBtn: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: RADIUS.full,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: COLORS.primary
+  },
+  registerBtnText: {
     color: COLORS.primary,
-    fontWeight: '700',
-    fontSize: FONTS.regular
+    fontSize: 13,
+    fontWeight: '700'
   }
 });
