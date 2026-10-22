@@ -309,3 +309,5 @@ npx.cmd expo start
 ---
 
 *Made with dedication for the hardworking farmers of India. 🌾🚜*
+#   S m a r t _ S h e t k a r i _ A p p  
+ 
