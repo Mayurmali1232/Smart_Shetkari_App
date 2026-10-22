@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, TextInput } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, TextInput, Image } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADIUS, FONTS } from '../../../constants/theme';
@@ -77,9 +77,20 @@ export default function AnimalListScreen() {
     }
   };
 
+  const getAnimalBadgeStyle = (type) => {
+    switch (type) {
+      case 'COW': return { bg: '#dcfce7', border: '#86efac', text: '#15803d' };
+      case 'BUFFALO': return { bg: '#e0f2fe', border: '#7dd3fc', text: '#0284c7' };
+      case 'GOAT': return { bg: '#fef3c7', border: '#fde047', text: '#b45309' };
+      case 'SHEEP': return { bg: '#ede9fe', border: '#d8b4fe', text: '#7c3aed' };
+      default: return { bg: '#f1f5f9', border: '#cbd5e1', text: '#475569' };
+    }
+  };
+
   const renderAnimalCard = ({ item }) => {
     const isMilking = item.milkingStatus === 'MILKING';
     const isHealthy = item.healthStatus === 'HEALTHY';
+    const badgeStyle = getAnimalBadgeStyle(item.animalType);
 
     return (
       <TouchableOpacity
@@ -88,15 +99,19 @@ export default function AnimalListScreen() {
         activeOpacity={0.7}
       >
         <View style={styles.cardTop}>
-          <View style={styles.avatarBox}>
-            <Text style={styles.avatarEmoji}>{getAnimalEmoji(item.animalType)}</Text>
+          <View style={[styles.avatarBox, { backgroundColor: badgeStyle.bg, borderColor: badgeStyle.border }]}>
+            {item.photoUrl ? (
+              <Image source={{ uri: item.photoUrl }} style={styles.avatarPhoto} resizeMode="cover" />
+            ) : (
+              <Text style={styles.avatarEmoji}>{getAnimalEmoji(item.animalType)}</Text>
+            )}
           </View>
           <View style={{ flex: 1 }}>
             <View style={styles.nameRow}>
               <Text style={styles.animalName}>{item.name}</Text>
               {item.tagNumber ? (
                 <View style={styles.tagBadge}>
-                  <Text style={styles.tagText}>#{item.tagNumber}</Text>
+                  <Text style={styles.tagText}>🏷️ #{item.tagNumber}</Text>
                 </View>
               ) : null}
             </View>
@@ -119,6 +134,12 @@ export default function AnimalListScreen() {
               {item.healthStatus === 'HEALTHY' ? '💚 Healthy' : `⚠️ ${item.healthStatus}`}
             </Text>
           </View>
+
+          {item.photoUrl ? (
+            <View style={[styles.statusBadge, { backgroundColor: '#eff6ff' }]}>
+              <Text style={[styles.statusBadgeText, { color: '#2563eb' }]}>📷 Photo</Text>
+            </View>
+          ) : null}
         </View>
 
         <View style={styles.cardFooter}>
@@ -208,8 +229,8 @@ export default function AnimalListScreen() {
             <EmptyState
               icon="🐄"
               title={t('dairy.noAnimals') || 'No animals found'}
-              description="Register your cows, buffaloes, and livestock to start tracking milk and health."
-              actionLabel={t('dairy.addNewAnimal') || 'Add New Animal'}
+              message="Register your cows, buffaloes, and livestock to start tracking milk and health."
+              actionTitle={t('dairy.addNewAnimal') || 'Add New Animal'}
               onAction={() => router.push('/dairy/animals/add')}
             />
           }
@@ -305,13 +326,19 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.xs + 2
   },
   avatarBox: {
-    width: 46,
-    height: 46,
+    width: 48,
+    height: 48,
     borderRadius: RADIUS.md,
     backgroundColor: '#f1f5f9',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: SPACING.sm + 2
+    marginRight: SPACING.sm + 2,
+    borderWidth: 1.5,
+    overflow: 'hidden'
+  },
+  avatarPhoto: {
+    width: '100%',
+    height: '100%'
   },
   avatarEmoji: {
     fontSize: 26

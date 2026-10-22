@@ -117,6 +117,7 @@ CREATE TABLE IF NOT EXISTS animal_health_records (
     doctor_name VARCHAR(100),
     cost NUMERIC(10, 2) DEFAULT 0.00,
     next_due_date DATE,
+    document_url VARCHAR(500),
     notes TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP

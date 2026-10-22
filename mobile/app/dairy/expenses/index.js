@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Modal, Alert, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Modal, Alert, ScrollView, Image } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADIUS, FONTS } from '../../../constants/theme';
@@ -11,6 +11,7 @@ import AppButton from '../../../components/AppButton';
 import LoadingIndicator from '../../../components/LoadingIndicator';
 import ErrorMessage from '../../../components/ErrorMessage';
 import EmptyState from '../../../components/EmptyState';
+import ImageAttachment from '../../../components/ImageAttachment';
 
 const EXPENSE_CATEGORIES = [
   { id: 'FEED_FODDER', label: 'Cattle Feed / खुराक 🌾' },
@@ -45,7 +46,9 @@ export default function DairyExpensesScreen() {
   const [unit, setUnit] = useState('KG');
   const [expenseDate, setExpenseDate] = useState(new Date().toISOString().split('T')[0]);
   const [description, setDescription] = useState('');
+  const [receiptUrl, setReceiptUrl] = useState('');
   const [saving, setSaving] = useState(false);
+  const [selectedPreviewReceipt, setSelectedPreviewReceipt] = useState(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -93,7 +96,8 @@ export default function DairyExpensesScreen() {
         unit: unit.trim() || undefined,
         expenseDate,
         isCapitalExpense: category === 'PURCHASE_COST',
-        description: description.trim() || undefined
+        description: description.trim() || undefined,
+        receiptUrl: receiptUrl.trim() || undefined
       };
 
       const res = await dairyService.recordExpense(payload);
@@ -102,6 +106,7 @@ export default function DairyExpensesScreen() {
         setAmount('');
         setQuantity('');
         setDescription('');
+        setReceiptUrl('');
         setSelectedAnimalId(null);
         loadData();
       }
@@ -164,6 +169,15 @@ export default function DairyExpensesScreen() {
 
       {item.description ? <Text style={styles.descText}>{item.description}</Text> : null}
 
+      {item.receiptUrl ? (
+        <TouchableOpacity
+          style={styles.receiptPill}
+          onPress={() => setSelectedPreviewReceipt({ uri: item.receiptUrl, title: `${item.category} Receipt` })}
+        >
+          <Text style={styles.receiptPillText}>🧾 View Bill / Receipt (पावती पहा)</Text>
+        </TouchableOpacity>
+      ) : null}
+
       <View style={styles.cardFooter}>
         <Text style={styles.typeTag}>
           {item.capitalExpense ? '🏛️ Capital Investment' : '🌾 Operating Cost'}
@@ -224,8 +238,8 @@ export default function DairyExpensesScreen() {
             <EmptyState
               icon="🌾"
               title="No dairy expenses recorded"
-              description="Track fodder, medicine, veterinary, and breeding costs for your livestock."
-              actionLabel="+ Add First Expense"
+              message="Track fodder, medicine, veterinary, and breeding costs for your livestock."
+              actionTitle="+ Add First Expense"
               onAction={() => setModalVisible(true)}
             />
           }
@@ -321,6 +335,15 @@ export default function DairyExpensesScreen() {
                 onChangeText={setDescription}
               />
 
+              {/* Receipt / Bill Photo Attachment */}
+              <ImageAttachment
+                value={receiptUrl}
+                onChange={setReceiptUrl}
+                label="Attach Bill / Receipt Photo (पावती)"
+                placeholderIcon="🧾"
+                hint="Take photo of feed bill or purchase receipt"
+              />
+
               <View style={styles.modalActions}>
                 <AppButton
                   title="Cancel"
@@ -337,6 +360,37 @@ export default function DairyExpensesScreen() {
                 />
               </View>
             </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Full Receipt Preview Modal */}
+      <Modal
+        visible={!!selectedPreviewReceipt}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setSelectedPreviewReceipt(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.previewModalHeader}>
+              <Text style={styles.modalTitle}>{selectedPreviewReceipt?.title || 'Receipt'}</Text>
+              <TouchableOpacity
+                style={styles.closeBtn}
+                onPress={() => setSelectedPreviewReceipt(null)}
+              >
+                <Text style={styles.closeBtnText}>✕ Close</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.fullImageContainer}>
+              {selectedPreviewReceipt?.uri && (
+                <Image
+                  source={{ uri: selectedPreviewReceipt.uri }}
+                  style={styles.fullImage}
+                  resizeMode="contain"
+                />
+              )}
+            </View>
           </View>
         </View>
       </Modal>
@@ -547,5 +601,51 @@ const styles = StyleSheet.create({
   modalActions: {
     flexDirection: 'row',
     marginTop: SPACING.md
+  },
+  receiptPill: {
+    marginTop: SPACING.xs,
+    marginBottom: SPACING.xs,
+    alignSelf: 'flex-start',
+    backgroundColor: '#eff6ff',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: RADIUS.sm,
+    borderWidth: 1,
+    borderColor: '#bfdbfe'
+  },
+  receiptPillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#1d4ed8'
+  },
+  previewModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: SPACING.md,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderLight
+  },
+  closeBtn: {
+    backgroundColor: '#f1f5f9',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: RADIUS.sm
+  },
+  closeBtnText: {
+    fontSize: FONTS.small,
+    fontWeight: 'bold',
+    color: COLORS.textPrimary
+  },
+  fullImageContainer: {
+    width: '100%',
+    height: 420,
+    backgroundColor: '#000000',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  fullImage: {
+    width: '100%',
+    height: '100%'
   }
 });

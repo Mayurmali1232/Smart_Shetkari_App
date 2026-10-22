@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Modal, Alert, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Modal, Alert, ScrollView, Image } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADIUS, FONTS } from '../../../constants/theme';
@@ -11,6 +11,7 @@ import AppButton from '../../../components/AppButton';
 import LoadingIndicator from '../../../components/LoadingIndicator';
 import ErrorMessage from '../../../components/ErrorMessage';
 import EmptyState from '../../../components/EmptyState';
+import ImageAttachment from '../../../components/ImageAttachment';
 
 const RECORD_TYPES = [
   { id: 'VACCINATION', label: 'Vaccination / लस 💉' },
@@ -42,8 +43,10 @@ export default function AnimalHealthScreen() {
   const [doctorName, setDoctorName] = useState('');
   const [cost, setCost] = useState('');
   const [nextDueDate, setNextDueDate] = useState('');
+  const [documentUrl, setDocumentUrl] = useState('');
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
+  const [selectedPreviewDoc, setSelectedPreviewDoc] = useState(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -102,6 +105,7 @@ export default function AnimalHealthScreen() {
         doctorName: doctorName.trim() || undefined,
         cost: cost ? parseFloat(cost) : 0,
         nextDueDate: nextDueDate.trim() || undefined,
+        documentUrl: documentUrl.trim() || undefined,
         notes: notes.trim() || undefined
       };
 
@@ -113,6 +117,7 @@ export default function AnimalHealthScreen() {
         setDoctorName('');
         setCost('');
         setNextDueDate('');
+        setDocumentUrl('');
         setNotes('');
         loadData();
       }
@@ -173,6 +178,15 @@ export default function AnimalHealthScreen() {
             {item.isOverdue ? '⚠️ OVERDUE: ' : '⏰ Next Due: '} {item.nextDueDate}
           </Text>
         </View>
+      ) : null}
+
+      {item.documentUrl ? (
+        <TouchableOpacity
+          style={styles.documentPill}
+          onPress={() => setSelectedPreviewDoc({ uri: item.documentUrl, title: `${item.treatmentName} Document` })}
+        >
+          <Text style={styles.documentPillText}>📋 View Prescription / Document (पावती पहा)</Text>
+        </TouchableOpacity>
       ) : null}
 
       <View style={styles.cardFooter}>
@@ -239,8 +253,8 @@ export default function AnimalHealthScreen() {
             <EmptyState
               icon="💉"
               title={activeTab === 'reminders' ? 'No upcoming vaccination reminders' : 'No health records yet'}
-              description="Keep track of vaccinations, artificial insemination, and medical treatments."
-              actionLabel="+ Log First Health Event"
+              message="Keep track of vaccinations, artificial insemination, and medical treatments."
+              actionTitle="+ Log First Health Event"
               onAction={() => setModalVisible(true)}
             />
           }
@@ -346,6 +360,15 @@ export default function AnimalHealthScreen() {
                 onChangeText={setNotes}
               />
 
+              {/* Prescription / Document Image Attachment */}
+              <ImageAttachment
+                value={documentUrl}
+                onChange={setDocumentUrl}
+                label="Attach Prescription / Vaccine Certificate Photo (प्रमाणपत्र)"
+                placeholderIcon="📋"
+                hint="Take photo of doctor prescription or vaccine certificate"
+              />
+
               <View style={styles.modalActions}>
                 <AppButton
                   title="Cancel"
@@ -362,6 +385,37 @@ export default function AnimalHealthScreen() {
                 />
               </View>
             </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Prescription / Document Preview Modal */}
+      <Modal
+        visible={!!selectedPreviewDoc}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setSelectedPreviewDoc(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.previewModalHeader}>
+              <Text style={styles.modalTitle}>{selectedPreviewDoc?.title || 'Document'}</Text>
+              <TouchableOpacity
+                style={styles.closeBtn}
+                onPress={() => setSelectedPreviewDoc(null)}
+              >
+                <Text style={styles.closeBtnText}>✕ Close</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.fullImageContainer}>
+              {selectedPreviewDoc?.uri && (
+                <Image
+                  source={{ uri: selectedPreviewDoc.uri }}
+                  style={styles.fullImage}
+                  resizeMode="contain"
+                />
+              )}
+            </View>
           </View>
         </View>
       </Modal>
@@ -585,5 +639,51 @@ const styles = StyleSheet.create({
   modalActions: {
     flexDirection: 'row',
     marginTop: SPACING.md
+  },
+  documentPill: {
+    marginTop: SPACING.xs,
+    marginBottom: SPACING.xs,
+    alignSelf: 'flex-start',
+    backgroundColor: '#eff6ff',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: RADIUS.sm,
+    borderWidth: 1,
+    borderColor: '#bfdbfe'
+  },
+  documentPillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#1d4ed8'
+  },
+  previewModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: SPACING.md,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderLight
+  },
+  closeBtn: {
+    backgroundColor: '#f1f5f9',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: RADIUS.sm
+  },
+  closeBtnText: {
+    fontSize: FONTS.small,
+    fontWeight: 'bold',
+    color: COLORS.textPrimary
+  },
+  fullImageContainer: {
+    width: '100%',
+    height: 420,
+    backgroundColor: '#000000',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  fullImage: {
+    width: '100%',
+    height: '100%'
   }
 });

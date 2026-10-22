@@ -177,14 +177,22 @@ export default function MilkProductionScreen() {
       <View style={styles.cardHeader}>
         <View style={{ flex: 1 }}>
           <Text style={styles.animalTitle}>
-            {item.animalType === 'BUFFALO' ? '🐃' : '🐄'} {item.animalName}
+            {item.animalType === 'BUFFALO' ? '🐃' : item.animalType === 'GOAT' ? '🐐' : '🐄'} {item.animalName}
             {item.animalTagNumber ? ` (#${item.animalTagNumber})` : ''}
           </Text>
-          <Text style={styles.timeBreakdown}>
-            🌅 Morning: {item.morningLiters} L • 🌇 Evening: {item.eveningLiters} L
-          </Text>
+          <View style={styles.shiftBadgesRow}>
+            <View style={styles.morningBadge}>
+              <Text style={styles.morningBadgeText}>🌅 Morning: {item.morningLiters || 0} L</Text>
+            </View>
+            <View style={styles.eveningBadge}>
+              <Text style={styles.eveningBadgeText}>🌙 Evening: {item.eveningLiters || 0} L</Text>
+            </View>
+          </View>
         </View>
-        <Text style={styles.totalBadge}>{item.totalLiters} L</Text>
+        <View style={styles.totalBadgeContainer}>
+          <Text style={styles.totalBadgeLabel}>Daily Total</Text>
+          <Text style={styles.totalBadge}>{item.totalLiters} L</Text>
+        </View>
       </View>
 
       {item.notes ? <Text style={styles.notesText}>Notes: {item.notes}</Text> : null}
@@ -225,11 +233,11 @@ export default function MilkProductionScreen() {
         </View>
         <View style={styles.summaryCol}>
           <Text style={styles.summaryLabel}>🌅 Morning</Text>
-          <Text style={styles.summaryVal}>{totalMorning.toFixed(1)} L</Text>
+          <Text style={[styles.summaryVal, { color: '#d97706' }]}>{totalMorning.toFixed(1)} L</Text>
         </View>
         <View style={styles.summaryCol}>
-          <Text style={styles.summaryLabel}>🌇 Evening</Text>
-          <Text style={styles.summaryVal}>{totalEvening.toFixed(1)} L</Text>
+          <Text style={styles.summaryLabel}>🌙 Evening</Text>
+          <Text style={[styles.summaryVal, { color: '#4f46e5' }]}>{totalEvening.toFixed(1)} L</Text>
         </View>
         <View style={styles.summaryCol}>
           <Text style={styles.summaryLabel}>Avg/Animal</Text>
@@ -261,8 +269,8 @@ export default function MilkProductionScreen() {
             <EmptyState
               icon="🥛"
               title="No milk logged for this date"
-              description="Tap below to record morning and evening milk for your animals."
-              actionLabel="+ Log Milk Now"
+              message="Tap below to record morning (🌅) and evening (🌙) milk for your animals."
+              actionTitle="+ Log Milk Now"
               onAction={() => openAddModal()}
             />
           }
@@ -304,7 +312,7 @@ export default function MilkProductionScreen() {
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
                 <AppInput
-                  label="Morning (L) / सकाळ *"
+                  label="🌅 Morning (L) / सकाळ *"
                   placeholder="e.g. 7.5"
                   keyboardType="numeric"
                   value={morningLiters}
@@ -313,7 +321,7 @@ export default function MilkProductionScreen() {
               </View>
               <View style={{ flex: 1, marginLeft: SPACING.md }}>
                 <AppInput
-                  label="Evening (L) / संध्याकाळ *"
+                  label="🌙 Evening (L) / संध्याकाळ *"
                   placeholder="e.g. 6.0"
                   keyboardType="numeric"
                   value={eveningLiters}
@@ -434,12 +442,47 @@ const styles = StyleSheet.create({
   animalTitle: {
     fontSize: FONTS.medium,
     fontWeight: '700',
-    color: COLORS.textPrimary
+    color: COLORS.textPrimary,
+    marginBottom: 4
   },
-  timeBreakdown: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
+  shiftBadgesRow: {
+    flexDirection: 'row',
+    gap: SPACING.xs,
     marginTop: 2
+  },
+  morningBadge: {
+    backgroundColor: '#fef3c7',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: RADIUS.sm,
+    borderWidth: 1,
+    borderColor: '#fde047'
+  },
+  morningBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#b45309'
+  },
+  eveningBadge: {
+    backgroundColor: '#e0e7ff',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: RADIUS.sm,
+    borderWidth: 1,
+    borderColor: '#c7d2fe'
+  },
+  eveningBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#4338ca'
+  },
+  totalBadgeContainer: {
+    alignItems: 'flex-end'
+  },
+  totalBadgeLabel: {
+    fontSize: 10,
+    color: COLORS.textSecondary,
+    fontWeight: '600'
   },
   totalBadge: {
     fontSize: FONTS.large,

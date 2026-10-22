@@ -21,6 +21,7 @@ public class AnimalHealthRecordResponse {
     private BigDecimal cost;
     private LocalDate nextDueDate;
     private Boolean isOverdue;
+    private String documentUrl;
     private String notes;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -130,6 +131,14 @@ public class AnimalHealthRecordResponse {
 
     public void setIsOverdue(Boolean overdue) {
         isOverdue = overdue;
+    }
+
+    public String getDocumentUrl() {
+        return documentUrl;
+    }
+
+    public void setDocumentUrl(String documentUrl) {
+        this.documentUrl = documentUrl;
     }
 
     public String getNotes() {

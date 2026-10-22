@@ -415,6 +415,7 @@ public class DairyService {
                 request.getNextDueDate(),
                 request.getNotes()
         );
+        record.setDocumentUrl(request.getDocumentUrl());
 
         record = animalHealthRecordRepository.save(record);
 
@@ -728,6 +729,7 @@ public class DairyService {
         } else {
             res.setIsOverdue(false);
         }
+        res.setDocumentUrl(h.getDocumentUrl());
         res.setNotes(h.getNotes());
         res.setCreatedAt(h.getCreatedAt());
         res.setUpdatedAt(h.getUpdatedAt());

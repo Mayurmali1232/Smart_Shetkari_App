@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Alert, Image, Modal } from 'react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING, RADIUS, FONTS } from '../../../constants/theme';
@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import AppHeader from '../../../components/AppHeader';
 import LoadingIndicator from '../../../components/LoadingIndicator';
 import ErrorMessage from '../../../components/ErrorMessage';
+import ImageAttachment from '../../../components/ImageAttachment';
 
 export default function AnimalDetailsScreen() {
   const router = useRouter();
@@ -23,6 +24,37 @@ export default function AnimalDetailsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
+
+  const [photoEditing, setPhotoEditing] = useState(false);
+  const [newPhotoUrl, setNewPhotoUrl] = useState('');
+  const [selectedPreviewImage, setSelectedPreviewImage] = useState(null);
+
+  const handleUpdatePhoto = async (photo) => {
+    try {
+      const updated = {
+        name: animal.name,
+        animalType: animal.animalType,
+        tagNumber: animal.tagNumber,
+        breed: animal.breed,
+        gender: animal.gender,
+        ageYears: animal.ageYears,
+        healthStatus: animal.healthStatus,
+        milkingStatus: animal.milkingStatus,
+        status: animal.status,
+        dailyFeedRequirement: animal.dailyFeedRequirement,
+        photoUrl: photo,
+        notes: animal.notes
+      };
+      const res = await dairyService.updateAnimal(id, updated);
+      if (res.success && res.data) {
+        setAnimal(res.data);
+        setPhotoEditing(false);
+        Alert.alert('Success', 'Animal photo updated successfully!');
+      }
+    } catch (err) {
+      Alert.alert('Error', err.message || 'Failed to update photo');
+    }
+  };
 
   const loadAnimalData = useCallback(async () => {
     if (!id) return;
@@ -116,15 +148,19 @@ export default function AnimalDetailsScreen() {
             {/* Animal Header Card */}
             <View style={styles.profileCard}>
               <View style={styles.avatarRow}>
-                <View style={styles.avatar}>
-                  <Text style={styles.avatarEmoji}>
-                    {animal.animalType === 'COW' ? '🐄' : animal.animalType === 'BUFFALO' ? '🐃' : '🐐'}
-                  </Text>
+                <View style={[styles.avatar, animal.photoUrl ? styles.avatarWithPhoto : null]}>
+                  {animal.photoUrl ? (
+                    <Image source={{ uri: animal.photoUrl }} style={styles.avatarImg} resizeMode="cover" />
+                  ) : (
+                    <Text style={styles.avatarEmoji}>
+                      {animal.animalType === 'COW' ? '🐄' : animal.animalType === 'BUFFALO' ? '🐃' : animal.animalType === 'GOAT' ? '🐐' : '🐑'}
+                    </Text>
+                  )}
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.animalName}>{animal.name}</Text>
                   <Text style={styles.animalSub}>
-                    {animal.breed || animal.animalType} • {animal.gender === 'FEMALE' ? 'Female' : 'Male'}
+                    {animal.breed || animal.animalType} • {animal.gender === 'FEMALE' ? 'Female (मादी)' : 'Male (नर)'}
                     {animal.ageYears ? ` • ${animal.ageYears} yrs` : ''}
                   </Text>
                   <View style={styles.badgesRow}>
@@ -138,9 +174,33 @@ export default function AnimalDetailsScreen() {
                         💚 {animal.healthStatus}
                       </Text>
                     </View>
+                    <TouchableOpacity
+                      style={styles.photoActionBadge}
+                      onPress={() => {
+                        setNewPhotoUrl(animal.photoUrl || '');
+                        setPhotoEditing(!photoEditing);
+                      }}
+                    >
+                      <Text style={styles.photoActionText}>📷 {animal.photoUrl ? 'Change' : 'Add Photo'}</Text>
+                    </TouchableOpacity>
                   </View>
                 </View>
               </View>
+
+              {photoEditing && (
+                <View style={styles.photoEditBox}>
+                  <ImageAttachment
+                    value={newPhotoUrl}
+                    onChange={(photo) => {
+                      setNewPhotoUrl(photo);
+                      handleUpdatePhoto(photo);
+                    }}
+                    label="Animal Photo / जनावराचा फोटो"
+                    placeholderIcon="📷"
+                    hint="Snap or upload animal photo"
+                  />
+                </View>
+              )}
 
               {/* Feed & Notes */}
               {animal.dailyFeedRequirement ? (
@@ -236,6 +296,14 @@ export default function AnimalDetailsScreen() {
                           ⏰ Next Booster Due: {h.nextDueDate}
                         </Text>
                       ) : null}
+                      {h.documentUrl ? (
+                        <TouchableOpacity
+                          style={styles.attachmentPill}
+                          onPress={() => setSelectedPreviewImage({ uri: h.documentUrl, title: `${h.treatmentName} Prescription` })}
+                        >
+                          <Text style={styles.attachmentPillText}>📋 View Prescription / पावती पहा</Text>
+                        </TouchableOpacity>
+                      ) : null}
                     </View>
                   ))
                 )}
@@ -261,6 +329,14 @@ export default function AnimalDetailsScreen() {
                         {e.quantity ? ` • Qty: ${e.quantity} ${e.unit || ''}` : ''}
                         {e.description ? ` • ${e.description}` : ''}
                       </Text>
+                      {e.receiptUrl ? (
+                        <TouchableOpacity
+                          style={styles.attachmentPill}
+                          onPress={() => setSelectedPreviewImage({ uri: e.receiptUrl, title: `${e.category} Receipt` })}
+                        >
+                          <Text style={styles.attachmentPillText}>🧾 View Bill / पावती पहा</Text>
+                        </TouchableOpacity>
+                      ) : null}
                     </View>
                   ))
                 )}
@@ -274,6 +350,37 @@ export default function AnimalDetailsScreen() {
           </>
         )}
       </ScrollView>
+
+      {/* Image Preview Modal for Prescriptions and Receipts */}
+      <Modal
+        visible={!!selectedPreviewImage}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setSelectedPreviewImage(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{selectedPreviewImage?.title || 'Document'}</Text>
+              <TouchableOpacity
+                style={styles.closeBtn}
+                onPress={() => setSelectedPreviewImage(null)}
+              >
+                <Text style={styles.closeBtnText}>✕ Close</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.fullImageContainer}>
+              {selectedPreviewImage?.uri && (
+                <Image
+                  source={{ uri: selectedPreviewImage.uri }}
+                  style={styles.fullImage}
+                  resizeMode="contain"
+                />
+              )}
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -312,10 +419,104 @@ const styles = StyleSheet.create({
     backgroundColor: '#f1f5f9',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: SPACING.md
+    marginRight: SPACING.md,
+    overflow: 'hidden',
+    borderWidth: 1.5,
+    borderColor: '#cbd5e1'
+  },
+  avatarWithPhoto: {
+    borderColor: COLORS.primary
+  },
+  avatarImg: {
+    width: '100%',
+    height: '100%'
   },
   avatarEmoji: {
     fontSize: 34
+  },
+  photoActionBadge: {
+    backgroundColor: '#eff6ff',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: RADIUS.sm,
+    borderWidth: 1,
+    borderColor: '#bfdbfe'
+  },
+  photoActionText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#2563eb'
+  },
+  photoEditBox: {
+    marginTop: SPACING.sm,
+    paddingTop: SPACING.sm,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.borderLight
+  },
+  attachmentPill: {
+    marginTop: SPACING.xs + 2,
+    alignSelf: 'flex-start',
+    backgroundColor: '#eff6ff',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: RADIUS.sm,
+    borderWidth: 1,
+    borderColor: '#bfdbfe'
+  },
+  attachmentPillText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#1d4ed8'
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: SPACING.md
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 600,
+    maxHeight: '90%',
+    backgroundColor: COLORS.surface,
+    borderRadius: RADIUS.lg,
+    overflow: 'hidden'
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: SPACING.md,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderLight
+  },
+  modalTitle: {
+    fontSize: FONTS.medium,
+    fontWeight: 'bold',
+    color: COLORS.textPrimary
+  },
+  closeBtn: {
+    backgroundColor: '#f1f5f9',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: RADIUS.sm
+  },
+  closeBtnText: {
+    fontSize: FONTS.small,
+    fontWeight: 'bold',
+    color: COLORS.textPrimary
+  },
+  fullImageContainer: {
+    width: '100%',
+    height: 420,
+    backgroundColor: '#000000',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  fullImage: {
+    width: '100%',
+    height: '100%'
   },
   animalName: {
     fontSize: FONTS.large,

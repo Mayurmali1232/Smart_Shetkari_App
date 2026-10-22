@@ -9,6 +9,7 @@ import AppHeader from '../../../components/AppHeader';
 import AppInput from '../../../components/AppInput';
 import AppButton from '../../../components/AppButton';
 import ErrorMessage from '../../../components/ErrorMessage';
+import ImageAttachment from '../../../components/ImageAttachment';
 
 const ANIMAL_TYPES = [
   { id: 'COW', label: 'Cow / गाय 🐄' },
@@ -48,6 +49,7 @@ export default function AddAnimalScreen() {
   const [healthStatus, setHealthStatus] = useState('HEALTHY');
   const [milkingStatus, setMilkingStatus] = useState('MILKING');
   const [dailyFeedRequirement, setDailyFeedRequirement] = useState('');
+  const [photoUrl, setPhotoUrl] = useState('');
   const [notes, setNotes] = useState('');
 
   const [loading, setLoading] = useState(false);
@@ -82,6 +84,7 @@ export default function AddAnimalScreen() {
         milkingStatus,
         status: 'ACTIVE',
         dailyFeedRequirement: dailyFeedRequirement.trim() || undefined,
+        photoUrl: photoUrl.trim() || undefined,
         notes: notes.trim() || undefined
       };
 
@@ -155,6 +158,17 @@ export default function AddAnimalScreen() {
                 </TouchableOpacity>
               ))}
             </View>
+
+            {/* Animal Photo Attachment */}
+            <ImageAttachment
+              value={photoUrl}
+              onChange={setPhotoUrl}
+              label="Animal Photo / जनावराचा फोटो (Optional)"
+              placeholderIcon={
+                animalType === 'COW' ? '🐄' : animalType === 'BUFFALO' ? '🐃' : animalType === 'GOAT' ? '🐐' : '🐑'
+              }
+              hint="Snap photo of animal or ear tag to identify quickly"
+            />
 
             <AppInput
               label="Animal Identification / Name (नाव) *"

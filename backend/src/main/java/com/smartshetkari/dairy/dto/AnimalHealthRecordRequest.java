@@ -25,6 +25,7 @@ public class AnimalHealthRecordRequest {
     private String doctorName;
     private BigDecimal cost;
     private LocalDate nextDueDate;
+    private String documentUrl;
     private String notes;
 
     public AnimalHealthRecordRequest() {
@@ -92,6 +93,14 @@ public class AnimalHealthRecordRequest {
 
     public void setNextDueDate(LocalDate nextDueDate) {
         this.nextDueDate = nextDueDate;
+    }
+
+    public String getDocumentUrl() {
+        return documentUrl;
+    }
+
+    public void setDocumentUrl(String documentUrl) {
+        this.documentUrl = documentUrl;
     }
 
     public String getNotes() {

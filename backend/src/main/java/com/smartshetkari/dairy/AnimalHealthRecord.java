@@ -44,6 +44,9 @@ public class AnimalHealthRecord {
 
     private LocalDate nextDueDate;
 
+    @Column(length = 500)
+    private String documentUrl;
+
     @Column(length = 1000)
     private String notes;
 
@@ -159,6 +162,14 @@ public class AnimalHealthRecord {
 
     public void setNextDueDate(LocalDate nextDueDate) {
         this.nextDueDate = nextDueDate;
+    }
+
+    public String getDocumentUrl() {
+        return documentUrl;
+    }
+
+    public void setDocumentUrl(String documentUrl) {
+        this.documentUrl = documentUrl;
     }
 
     public String getNotes() {

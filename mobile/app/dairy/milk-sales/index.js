@@ -298,8 +298,8 @@ export default function MilkSalesScreen() {
             <EmptyState
               icon="💰"
               title="No milk sales recorded yet"
-              description="Record sales to dairies, collection centers, or direct customers."
-              actionLabel="+ Record First Sale"
+              message="Record sales to dairies, collection centers, or direct customers."
+              actionTitle="+ Record First Sale"
               onAction={() => setSaleModalVisible(true)}
             />
           }
